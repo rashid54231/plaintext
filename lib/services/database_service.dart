@@ -72,9 +72,7 @@ class DatabaseService {
 
   Future<void> insertUser(User user) async {
     try {
-      await _supabase
-          .from('users')
-          .insert(user.toMap());
+      await _supabase.from('users').insert(user.toMap());
     } catch (e) {
       throw Exception('Failed to create user: $e');
     }
@@ -117,7 +115,14 @@ class DatabaseService {
           .select('id')
           .single();
 
-      return response['id'] as String?;
+      final taskId = response['id'] as String?;
+
+      // Insert assignments
+      if (taskId != null && task.assignedUserIds.isNotEmpty) {
+        await assignTaskToStudents(taskId, task.assignedUserIds);
+      }
+
+      return taskId;
     } catch (e) {
       throw Exception('Failed to create task: $e');
     }
@@ -130,7 +135,13 @@ class DatabaseService {
           .select()
           .order('due_date', ascending: true);
 
-      return (response as List).map((map) => Task.fromMap(map)).toList();
+      final tasks = <Task>[];
+      for (final map in response as List) {
+        final task = Task.fromMap(map);
+        final assignedIds = await getTaskAssignedUserIds(task.id!);
+        tasks.add(task.copyWith(assignedUserIds: assignedIds));
+      }
+      return tasks;
     } catch (e) {
       return [];
     }
@@ -138,13 +149,29 @@ class DatabaseService {
 
   Future<List<Task>> getTasksByUser(String userId) async {
     try {
+      // Get task IDs assigned to this user
+      final assignments = await _supabase
+          .from('task_assignments')
+          .select('task_id')
+          .eq('user_id', userId);
+
+      final taskIds = (assignments as List).map((a) => a['task_id'] as String).toList();
+
+      if (taskIds.isEmpty) return [];
+
       final response = await _supabase
           .from('tasks')
           .select()
-          .eq('assigned_to_user_id', userId)
+          .inFilter('id', taskIds)
           .order('due_date', ascending: true);
 
-      return (response as List).map((map) => Task.fromMap(map)).toList();
+      final tasks = <Task>[];
+      for (final map in response as List) {
+        final task = Task.fromMap(map);
+        final assignedIds = await getTaskAssignedUserIds(task.id!);
+        tasks.add(task.copyWith(assignedUserIds: assignedIds));
+      }
+      return tasks;
     } catch (e) {
       return [];
     }
@@ -158,7 +185,13 @@ class DatabaseService {
           .eq('assigned_by_user_id', userId)
           .order('due_date', ascending: true);
 
-      return (response as List).map((map) => Task.fromMap(map)).toList();
+      final tasks = <Task>[];
+      for (final map in response as List) {
+        final task = Task.fromMap(map);
+        final assignedIds = await getTaskAssignedUserIds(task.id!);
+        tasks.add(task.copyWith(assignedUserIds: assignedIds));
+      }
+      return tasks;
     } catch (e) {
       return [];
     }
@@ -173,7 +206,9 @@ class DatabaseService {
           .maybeSingle();
 
       if (response == null) return null;
-      return Task.fromMap(response);
+      final task = Task.fromMap(response);
+      final assignedIds = await getTaskAssignedUserIds(task.id!);
+      return task.copyWith(assignedUserIds: assignedIds);
     } catch (e) {
       return null;
     }
@@ -192,10 +227,7 @@ class DatabaseService {
 
   Future<void> deleteTask(String id) async {
     try {
-      await _supabase
-          .from('tasks')
-          .delete()
-          .eq('id', id);
+      await _supabase.from('tasks').delete().eq('id', id);
     } catch (e) {
       throw Exception('Failed to delete task: $e');
     }
@@ -203,10 +235,21 @@ class DatabaseService {
 
   Future<Map<String, int>> getTaskCountByUser(String userId) async {
     try {
+      final assignments = await _supabase
+          .from('task_assignments')
+          .select('task_id')
+          .eq('user_id', userId);
+
+      final taskIds = (assignments as List).map((a) => a['task_id'] as String).toList();
+
+      if (taskIds.isEmpty) {
+        return {'total': 0, 'completed': 0, 'pending': 0, 'overdue': 0};
+      }
+
       final response = await _supabase
           .from('tasks')
           .select('id, is_completed, due_date')
-          .eq('assigned_to_user_id', userId);
+          .inFilter('id', taskIds);
 
       final tasks = response as List;
       final now = DateTime.now();
@@ -223,6 +266,104 @@ class DatabaseService {
       return {'total': total, 'completed': completed, 'pending': pending, 'overdue': overdue};
     } catch (e) {
       return {'total': 0, 'completed': 0, 'pending': 0, 'overdue': 0};
+    }
+  }
+
+  // ============================================
+  // TASK ASSIGNMENTS (Many-to-Many)
+  // ============================================
+
+  Future<void> assignTaskToStudents(String taskId, List<String> userIds) async {
+    try {
+      final assignments = userIds.map((userId) => {
+        'task_id': taskId,
+        'user_id': userId,
+      }).toList();
+
+      await _supabase.from('task_assignments').insert(assignments);
+    } catch (e) {
+      throw Exception('Failed to assign task: $e');
+    }
+  }
+
+  Future<void> removeTaskAssignments(String taskId) async {
+    try {
+      await _supabase
+          .from('task_assignments')
+          .delete()
+          .eq('task_id', taskId);
+    } catch (e) {
+      throw Exception('Failed to remove assignments: $e');
+    }
+  }
+
+  Future<void> updateTaskAssignments(String taskId, List<String> userIds) async {
+    try {
+      // Remove old assignments
+      await removeTaskAssignments(taskId);
+      // Add new assignments
+      if (userIds.isNotEmpty) {
+        await assignTaskToStudents(taskId, userIds);
+      }
+    } catch (e) {
+      throw Exception('Failed to update assignments: $e');
+    }
+  }
+
+  Future<List<String>> getTaskAssignedUserIds(String taskId) async {
+    try {
+      final response = await _supabase
+          .from('task_assignments')
+          .select('user_id')
+          .eq('task_id', taskId);
+
+      return (response as List).map((a) => a['user_id'] as String).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<User>> getTaskAssignedUsers(String taskId) async {
+    try {
+      final userIds = await getTaskAssignedUserIds(taskId);
+      if (userIds.isEmpty) return [];
+
+      final users = <User>[];
+      for (final userId in userIds) {
+        final user = await getUserById(userId);
+        if (user != null) users.add(user);
+      }
+      return users;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<bool> isTaskAssignedToUser(String taskId, String userId) async {
+    try {
+      final response = await _supabase
+          .from('task_assignments')
+          .select('id')
+          .eq('task_id', taskId)
+          .eq('user_id', userId)
+          .limit(1);
+
+      return (response as List).isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<List<User>> getStudentsNotAssignedToTask(String taskId) async {
+    try {
+      final assignedIds = await getTaskAssignedUserIds(taskId);
+      final allStudents = await getAllStudents();
+
+      if (assignedIds.isEmpty) return allStudents;
+
+      return allStudents.where((s) => !assignedIds.contains(s.id)).toList();
+    } catch (e) {
+      return [];
     }
   }
 }

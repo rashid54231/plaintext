@@ -167,11 +167,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
   }
 
   Widget _buildTaskItem(Task task) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _getTaskInfo(task),
+    return FutureBuilder<List<User>>(
+      future: DatabaseService.instance.getTaskAssignedUsers(task.id!),
       builder: (context, snapshot) {
-        final info = snapshot.data ?? {};
-        final assignedUser = info['assignedTo'] as User?;
+        final assignedUsers = snapshot.data ?? [];
+        final assignedNames = assignedUsers.map((u) => u.name).join(', ');
 
         return GestureDetector(
           onTap: () {
@@ -257,7 +257,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     Icon(Icons.person_outline, size: 14, color: AppColors.textHint),
                     const SizedBox(width: 4),
                     Text(
-                      assignedUser?.name ?? 'Loading...',
+                      assignedUsers.isEmpty ? 'No students' : 'To: $assignedNames',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -282,12 +282,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
         );
       },
     );
-  }
-
-  Future<Map<String, dynamic>> _getTaskInfo(Task task) async {
-    final db = DatabaseService.instance;
-    final assignedTo = await db.getUserById(task.assignedToUserId);
-    return {'assignedTo': assignedTo};
   }
 
   Color _getPriorityColor(Priority priority) {

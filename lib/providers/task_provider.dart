@@ -221,7 +221,7 @@ class TaskProvider extends ChangeNotifier {
   }
 
   List<Task> getTasksForStudent(String studentId) {
-    return _allTasks.where((t) => t.assignedToUserId == studentId).toList();
+    return _allTasks.where((t) => t.assignedUserIds.contains(studentId)).toList();
   }
 
   void clearError() {

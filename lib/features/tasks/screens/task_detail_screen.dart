@@ -240,13 +240,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Widget _buildInfoSection() {
-    return FutureBuilder<User?>(
-      future: DatabaseService.instance.getUserById(_task.assignedToUserId),
+    return FutureBuilder<List<User>>(
+      future: DatabaseService.instance.getTaskAssignedUsers(_task.id!),
       builder: (context, assignedSnapshot) {
         return FutureBuilder<User?>(
           future: DatabaseService.instance.getUserById(_task.assignedByUserId),
           builder: (context, managerSnapshot) {
-            final assignedTo = assignedSnapshot.data;
+            final assignedUsers = assignedSnapshot.data ?? [];
             final assignedBy = managerSnapshot.data;
 
             return Container(
@@ -256,10 +256,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow(Icons.person_rounded, 'Assigned To', assignedTo?.name ?? 'Loading...', AppColors.info),
+                  _buildInfoRow(
+                    Icons.people_rounded,
+                    'Assigned To (${assignedUsers.length})',
+                    assignedUsers.map((u) => u.name).join(', '),
+                    AppColors.info,
+                  ),
                   const Divider(height: 24),
-                  _buildInfoRow(Icons.admin_panel_settings_rounded, 'Assigned By', assignedBy?.name ?? 'Loading...', AppColors.primary),
+                  _buildInfoRow(
+                    Icons.admin_panel_settings_rounded,
+                    'Assigned By',
+                    assignedBy?.name ?? 'Loading...',
+                    AppColors.primary,
+                  ),
                 ],
               ),
             );

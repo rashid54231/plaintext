@@ -9,13 +9,13 @@ class Task {
   final DateTime dueDate;
   final bool isCompleted;
   final DateTime? completedDate;
-  final String assignedToUserId;
   final String assignedByUserId;
   final String? submissionPath;
   final String? reviewComment;
   final TaskStatus status;
   final Priority priority;
   final String? category;
+  final List<String> assignedUserIds;
 
   Task({
     this.id,
@@ -25,13 +25,13 @@ class Task {
     required this.dueDate,
     this.isCompleted = false,
     this.completedDate,
-    required this.assignedToUserId,
     required this.assignedByUserId,
     this.submissionPath,
     this.reviewComment,
     this.status = TaskStatus.pending,
     this.priority = Priority.medium,
     this.category,
+    this.assignedUserIds = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -42,7 +42,6 @@ class Task {
       'due_date': dueDate.toIso8601String(),
       'is_completed': isCompleted,
       'completed_date': completedDate?.toIso8601String(),
-      'assigned_to_user_id': assignedToUserId,
       'assigned_by_user_id': assignedByUserId,
       'submission_path': submissionPath,
       'review_comment': reviewComment,
@@ -65,13 +64,15 @@ class Task {
       completedDate: map['completed_date'] != null
           ? DateTime.tryParse(map['completed_date'] as String)
           : null,
-      assignedToUserId: map['assigned_to_user_id'] as String? ?? '',
       assignedByUserId: map['assigned_by_user_id'] as String? ?? '',
       submissionPath: map['submission_path'] as String?,
       reviewComment: map['review_comment'] as String?,
       status: _parseStatus(map['status'] as String?),
       priority: _parsePriority(map['priority'] as String?),
       category: map['category'] as String?,
+      assignedUserIds: map['assigned_user_ids'] != null
+          ? List<String>.from(map['assigned_user_ids'] as List)
+          : [],
     );
   }
 
@@ -97,13 +98,13 @@ class Task {
     DateTime? dueDate,
     bool? isCompleted,
     DateTime? completedDate,
-    String? assignedToUserId,
     String? assignedByUserId,
     String? submissionPath,
     String? reviewComment,
     TaskStatus? status,
     Priority? priority,
     String? category,
+    List<String>? assignedUserIds,
   }) {
     return Task(
       id: id ?? this.id,
@@ -113,13 +114,13 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       completedDate: completedDate ?? this.completedDate,
-      assignedToUserId: assignedToUserId ?? this.assignedToUserId,
       assignedByUserId: assignedByUserId ?? this.assignedByUserId,
       submissionPath: submissionPath ?? this.submissionPath,
       reviewComment: reviewComment ?? this.reviewComment,
       status: status ?? this.status,
       priority: priority ?? this.priority,
       category: category ?? this.category,
+      assignedUserIds: assignedUserIds ?? this.assignedUserIds,
     );
   }
 

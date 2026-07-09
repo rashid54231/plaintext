@@ -336,10 +336,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
   }
 
   Widget _buildTaskItem(Task task) {
-    return FutureBuilder<User?>(
-      future: DatabaseService.instance.getUserById(task.assignedToUserId),
+    return FutureBuilder<List<User>>(
+      future: DatabaseService.instance.getTaskAssignedUsers(task.id!),
       builder: (context, snapshot) {
-        final assignedUser = snapshot.data;
+        final assignedUsers = snapshot.data ?? [];
+        final assignedNames = assignedUsers.map((u) => u.name).join(', ');
 
         return GestureDetector(
           onTap: () {
@@ -392,7 +393,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        assignedUser != null ? 'Assigned to: ${assignedUser.name}' : 'Loading...',
+                        assignedUsers.isEmpty ? 'No students' : 'To: $assignedNames',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -672,10 +673,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
   }
 
   Widget _buildAllTaskItem(Task task) {
-    return FutureBuilder<User?>(
-      future: DatabaseService.instance.getUserById(task.assignedToUserId),
+    return FutureBuilder<List<User>>(
+      future: DatabaseService.instance.getTaskAssignedUsers(task.id!),
       builder: (context, snapshot) {
-        final assignedUser = snapshot.data;
+        final assignedUsers = snapshot.data ?? [];
+        final assignedNames = assignedUsers.map((u) => u.name).join(', ');
 
         return Dismissible(
           key: Key('task_${task.id}'),
@@ -789,7 +791,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                       Icon(Icons.person_outline, size: 14, color: AppColors.textHint),
                       const SizedBox(width: 4),
                       Text(
-                        assignedUser?.name ?? 'Loading...',
+                        assignedUsers.isEmpty ? 'No students' : 'To: $assignedNames',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: AppColors.textSecondary,
