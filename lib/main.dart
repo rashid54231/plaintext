@@ -7,20 +7,23 @@ import 'config/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/task_provider.dart';
 import 'providers/user_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/file_picker_service.dart';
+import 'services/notification_service.dart';
 import 'features/splash/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase
   await Supabase.initialize(
     url: SupabaseConfig.supabaseUrl,
+    // ignore: deprecated_member_use
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
-  // Initialize FilePicker Service
   await FilePickerService.instance.initialize();
+  await NotificationService.instance.initialize();
+  await NotificationService.instance.requestPermission();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -41,14 +44,21 @@ class TaskFlowApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
       ],
-      child: MaterialApp(
-        title: 'TaskFlow',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'TaskFlow',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }

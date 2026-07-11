@@ -1,5 +1,5 @@
 -- ============================================
--- TaskFlow App - Supabase Migration
+-- TaskFlow App v2.0 - Supabase Migration
 -- Run this in: Supabase Dashboard → SQL Editor
 -- ============================================
 
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   due_date TIMESTAMPTZ NOT NULL,
   is_completed BOOLEAN DEFAULT false,
   completed_date TIMESTAMPTZ,
-  assigned_to_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_to_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   assigned_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   submission_path TEXT,
   review_comment TEXT,
@@ -32,103 +32,95 @@ CREATE TABLE IF NOT EXISTS tasks (
   category TEXT
 );
 
--- 3. Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to_user_id);
+-- 3. Task Assignments (Many-to-Many)
+CREATE TABLE IF NOT EXISTS task_assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(task_id, user_id)
+);
+
+-- 4. Task Comments
+CREATE TABLE IF NOT EXISTS task_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_name TEXT NOT NULL,
+  user_role TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 5. Indexes
 CREATE INDEX IF NOT EXISTS idx_tasks_assigned_by ON tasks(assigned_by_user_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_task_assignments_task ON task_assignments(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_assignments_user ON task_assignments(user_id);
+CREATE INDEX IF NOT EXISTS idx_comments_task ON task_comments(task_id);
 
--- 4. Enable Row Level Security
+-- 6. Enable Row Level Security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE task_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE task_comments ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- RLS POLICIES FOR USERS TABLE
+-- RLS POLICIES - USERS
 -- ============================================
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
+CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (true);
 
--- Everyone can read their own profile
-CREATE POLICY "Users can view own profile"
-  ON users FOR SELECT
-  USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Allow signup" ON users;
+CREATE POLICY "Allow signup" ON users FOR INSERT WITH CHECK (true);
 
--- Manager can view all students
-CREATE POLICY "Manager can view all students"
-  ON users FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid() AND role = 'manager'
-    )
-  );
-
--- Anyone can signup (insert)
-CREATE POLICY "Allow signup"
-  ON users FOR INSERT
-  WITH CHECK (true);
-
--- Users can update their own profile
-CREATE POLICY "Users can update own profile"
-  ON users FOR UPDATE
-  USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (true);
 
 -- ============================================
--- RLS POLICIES FOR TASKS TABLE
+-- RLS POLICIES - TASKS
 -- ============================================
+DROP POLICY IF EXISTS "All can read tasks" ON tasks;
+CREATE POLICY "All can read tasks" ON tasks FOR SELECT USING (true);
 
--- Manager can view all tasks
-CREATE POLICY "Manager can view all tasks"
-  ON tasks FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid() AND role = 'manager'
-    )
-  );
+DROP POLICY IF EXISTS "All can insert tasks" ON tasks;
+CREATE POLICY "All can insert tasks" ON tasks FOR INSERT WITH CHECK (true);
 
--- Student can view tasks assigned to them
-CREATE POLICY "Student can view own tasks"
-  ON tasks FOR SELECT
-  USING (assigned_to_user_id = auth.uid());
+DROP POLICY IF EXISTS "All can update tasks" ON tasks;
+CREATE POLICY "All can update tasks" ON tasks FOR UPDATE USING (true);
 
--- Manager can create tasks
-CREATE POLICY "Manager can create tasks"
-  ON tasks FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid() AND role = 'manager'
-    )
-  );
-
--- Manager can update any task
-CREATE POLICY "Manager can update tasks"
-  ON tasks FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid() AND role = 'manager'
-    )
-  );
-
--- Student can update tasks assigned to them (for completion)
-CREATE POLICY "Student can update own tasks"
-  ON tasks FOR UPDATE
-  USING (assigned_to_user_id = auth.uid());
-
--- Manager can delete tasks
-CREATE POLICY "Manager can delete tasks"
-  ON tasks FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE id = auth.uid() AND role = 'manager'
-    )
-  );
+DROP POLICY IF EXISTS "All can delete tasks" ON tasks;
+CREATE POLICY "All can delete tasks" ON tasks FOR DELETE USING (true);
 
 -- ============================================
--- FUNCTION: Auto-check if manager already exists
+-- RLS POLICIES - TASK ASSIGNMENTS
+-- ============================================
+DROP POLICY IF EXISTS "All can read assignments" ON task_assignments;
+CREATE POLICY "All can read assignments" ON task_assignments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "All can insert assignments" ON task_assignments;
+CREATE POLICY "All can insert assignments" ON task_assignments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "All can delete assignments" ON task_assignments;
+CREATE POLICY "All can delete assignments" ON task_assignments FOR DELETE USING (true);
+
+-- ============================================
+-- RLS POLICIES - COMMENTS
+-- ============================================
+DROP POLICY IF EXISTS "All can read comments" ON task_comments;
+CREATE POLICY "All can read comments" ON task_comments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "All can insert comments" ON task_comments;
+CREATE POLICY "All can insert comments" ON task_comments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "All can delete comments" ON task_comments;
+CREATE POLICY "All can delete comments" ON task_comments FOR DELETE USING (true);
+
+-- ============================================
+-- FUNCTION: Single Manager Enforcement
 -- ============================================
 CREATE OR REPLACE FUNCTION check_manager_exists()
 RETURNS TRIGGER AS $$
@@ -142,44 +134,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to enforce single manager
+DROP TRIGGER IF EXISTS enforce_single_manager ON users;
 CREATE TRIGGER enforce_single_manager
   BEFORE INSERT ON users
-  FOR EACH ROW
-  EXECUTE FUNCTION check_manager_exists();
+  FOR EACH ROW EXECUTE FUNCTION check_manager_exists();
 
 -- ============================================
--- FUNCTION: Auto-update task status when overdue
+-- Storage: task-submissions bucket
+-- Run separately if needed
 -- ============================================
-CREATE OR REPLACE FUNCTION update_overdue_tasks()
-RETURNS void AS $$
-BEGIN
-  UPDATE tasks
-  SET status = 'overdue'
-  WHERE is_completed = false
-    AND due_date < now()
-    AND status != 'overdue';
-END;
-$$ LANGUAGE plpgsql;
-
--- ============================================
--- FUNCTION: Get task statistics for a user
--- ============================================
-CREATE OR REPLACE FUNCTION get_user_task_stats(p_user_id UUID)
-RETURNS TABLE (
-  total_tasks BIGINT,
-  completed_tasks BIGINT,
-  pending_tasks BIGINT,
-  overdue_tasks BIGINT
-) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    COUNT(*) as total_tasks,
-    COUNT(*) FILTER (WHERE is_completed = true) as completed_tasks,
-    COUNT(*) FILTER (WHERE is_completed = false AND due_date >= now()) as pending_tasks,
-    COUNT(*) FILTER (WHERE is_completed = false AND due_date < now()) as overdue_tasks
-  FROM tasks
-  WHERE assigned_to_user_id = p_user_id;
-END;
-$$ LANGUAGE plpgsql;
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('task-submissions', 'task-submissions', true);
