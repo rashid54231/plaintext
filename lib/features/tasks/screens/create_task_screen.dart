@@ -25,6 +25,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _categoryCtrl = TextEditingController();
+  final _maxMarksCtrl = TextEditingController();
   bool _isLoading = false;
   DateTime _dueDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _dueTime = const TimeOfDay(hour: 23, minute: 59);
@@ -46,6 +47,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       _titleCtrl.text = t.title;
       _descCtrl.text = t.description;
       _categoryCtrl.text = t.category ?? '';
+      _maxMarksCtrl.text = t.maxMarks?.toString() ?? '';
       _dueDate = t.dueDate;
       _dueTime = TimeOfDay.fromDateTime(t.dueDate);
       _priority = t.priority;
@@ -58,6 +60,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _categoryCtrl.dispose();
+    _maxMarksCtrl.dispose();
     super.dispose();
   }
 
@@ -242,6 +245,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         dueDate: _combinedDueDate,
         priority: _priority,
         category: _categoryCtrl.text.trim().isNotEmpty ? _categoryCtrl.text.trim() : null,
+        maxMarks: int.tryParse(_maxMarksCtrl.text.trim()),
         assignedUserIds: _selectedStudentIds,
       );
       final success = await taskProvider.updateTask(updated);
@@ -258,6 +262,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
         Navigator.of(context).pop();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(taskProvider.error ?? 'Failed to update task'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
       }
     } else {
       final task = Task(
@@ -268,6 +279,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         assignedByUserId: manager!.id!,
         priority: _priority,
         category: _categoryCtrl.text.trim().isNotEmpty ? _categoryCtrl.text.trim() : null,
+        maxMarks: int.tryParse(_maxMarksCtrl.text.trim()),
         assignedUserIds: _selectedStudentIds,
       );
       final success = await taskProvider.createTask(task);
@@ -289,6 +301,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ));
         Navigator.of(context).pop();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(taskProvider.error ?? 'Failed to assign task'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ));
       }
     }
   }
@@ -326,6 +345,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 hint: 'Describe what needs to be done...',
                 prefixIcon: Icons.description_outlined,
                 maxLines: 4,
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: _maxMarksCtrl,
+                label: 'Max Marks',
+                hint: 'Optional: Enter maximum points',
+                prefixIcon: Icons.star_border_rounded,
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
               _buildCategoryField(isDark),

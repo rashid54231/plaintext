@@ -57,22 +57,13 @@ class UserProvider extends ChangeNotifier {
     required String password,
     required Role role,
     String? phone,
+    String? classCode,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      if (role == Role.manager) {
-        final hasManager = await _db.hasManager();
-        if (hasManager) {
-          _error = 'A manager already exists. Please sign up as a student.';
-          _isLoading = false;
-          notifyListeners();
-          return _error;
-        }
-      }
-
       final existingUser = await _db.getUserByEmail(email.trim());
       if (existingUser != null) {
         _error = 'An account with this email already exists';
@@ -87,6 +78,7 @@ class UserProvider extends ChangeNotifier {
         password: password,
         role: role,
         phone: phone,
+        classCode: classCode,
       );
 
       final id = await _db.insertUserAndGetId(user);

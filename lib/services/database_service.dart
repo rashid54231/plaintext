@@ -268,6 +268,34 @@ class DatabaseService {
     }
   }
 
+  Future<int> getTotalMarksByUser(String userId) async {
+    try {
+      final assignments = await _supabase
+          .from('task_assignments')
+          .select('task_id')
+          .eq('user_id', userId);
+      final taskIds =
+          (assignments as List).map((a) => a['task_id'] as String).toList();
+      if (taskIds.isEmpty) {
+        return 0;
+      }
+      final response = await _supabase
+          .from('tasks')
+          .select('marks')
+          .inFilter('id', taskIds);
+      final tasks = response as List;
+      int totalMarks = 0;
+      for (var t in tasks) {
+        if (t['marks'] != null) {
+          totalMarks += (t['marks'] as int);
+        }
+      }
+      return totalMarks;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   // ============================================
   // TASK ASSIGNMENTS (Many-to-Many)
   // ============================================

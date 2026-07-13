@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
+import '../config/supabase_config.dart';
 
 class TaskProvider extends ChangeNotifier {
   final DatabaseService _db = DatabaseService.instance;
@@ -10,6 +12,7 @@ class TaskProvider extends ChangeNotifier {
   List<Task> _assignedTasks = [];
   bool _isLoading = false;
   String? _error;
+  StreamSubscription? _taskSubscription;
 
   List<Task> get allTasks => _allTasks;
   List<Task> get userTasks => _userTasks;
@@ -195,7 +198,7 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> reviewTask(String taskId, {required bool approved, String? comment}) async {
+  Future<bool> reviewTask(String taskId, {required bool approved, String? comment, int? marks}) async {
     try {
       final taskIndex = _allTasks.indexWhere((t) => t.id == taskId);
       if (taskIndex == -1) return false;
@@ -203,6 +206,7 @@ class TaskProvider extends ChangeNotifier {
       final task = _allTasks[taskIndex];
       final updatedTask = task.copyWith(
         reviewComment: comment,
+        marks: marks,
       );
 
       await _db.updateTask(updatedTask);
@@ -227,5 +231,26 @@ class TaskProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  void initRealtime(String userId, bool isManager) {
+    _taskSubscription?.cancel();
+    _taskSubscription = SupabaseConfig.client
+        .from('tasks')
+        .stream(primaryKey: ['id'])
+        .listen((_) {
+      if (isManager) {
+        loadAllTasks();
+        loadAssignedTasks(userId);
+      } else {
+        loadUserTasks(userId);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _taskSubscription?.cancel();
+    super.dispose();
   }
 }

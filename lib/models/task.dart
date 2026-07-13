@@ -16,6 +16,8 @@ class Task {
   final Priority priority;
   final String? category;
   final List<String> assignedUserIds;
+  final int? marks;
+  final int? maxMarks;
 
   Task({
     this.id,
@@ -32,6 +34,8 @@ class Task {
     this.priority = Priority.medium,
     this.category,
     this.assignedUserIds = const [],
+    this.marks,
+    this.maxMarks,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,11 +47,14 @@ class Task {
       'is_completed': isCompleted,
       'completed_date': completedDate?.toIso8601String(),
       'assigned_by_user_id': assignedByUserId,
+      'assigned_to_user_id': assignedUserIds.isNotEmpty ? assignedUserIds.first : assignedByUserId,
       'submission_path': submissionPath,
       'review_comment': reviewComment,
       'status': status.name,
       'priority': priority.name,
       'category': category,
+      'marks': marks,
+      'max_marks': maxMarks,
     };
     if (id != null) map['id'] = id;
     return map;
@@ -73,6 +80,8 @@ class Task {
       assignedUserIds: map['assigned_user_ids'] != null
           ? List<String>.from(map['assigned_user_ids'] as List)
           : [],
+      marks: map['marks'] as int?,
+      maxMarks: map['max_marks'] as int?,
     );
   }
 
@@ -105,6 +114,8 @@ class Task {
     Priority? priority,
     String? category,
     List<String>? assignedUserIds,
+    int? marks,
+    int? maxMarks,
   }) {
     return Task(
       id: id ?? this.id,
@@ -121,6 +132,8 @@ class Task {
       priority: priority ?? this.priority,
       category: category ?? this.category,
       assignedUserIds: assignedUserIds ?? this.assignedUserIds,
+      marks: marks ?? this.marks,
+      maxMarks: maxMarks ?? this.maxMarks,
     );
   }
 

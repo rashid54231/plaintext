@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   password TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('manager', 'student')),
   phone TEXT DEFAULT '',
+  class_code TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -29,7 +30,9 @@ CREATE TABLE IF NOT EXISTS tasks (
   review_comment TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'inProgress', 'completed', 'overdue')),
   priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
-  category TEXT
+  category TEXT,
+  marks INTEGER,
+  max_marks INTEGER
 );
 
 -- 3. Task Assignments (Many-to-Many)
@@ -119,28 +122,20 @@ CREATE POLICY "All can insert comments" ON task_comments FOR INSERT WITH CHECK (
 DROP POLICY IF EXISTS "All can delete comments" ON task_comments;
 CREATE POLICY "All can delete comments" ON task_comments FOR DELETE USING (true);
 
--- ============================================
--- FUNCTION: Single Manager Enforcement
--- ============================================
-CREATE OR REPLACE FUNCTION check_manager_exists()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.role = 'manager' THEN
-    IF EXISTS (SELECT 1 FROM users WHERE role = 'manager') THEN
-      RAISE EXCEPTION 'Only one manager can be registered';
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS enforce_single_manager ON users;
-CREATE TRIGGER enforce_single_manager
-  BEFORE INSERT ON users
-  FOR EACH ROW EXECUTE FUNCTION check_manager_exists();
+-- Trigger removed to support multiple managers
 
 -- ============================================
--- Storage: task-submissions bucket
--- Run separately if needed
+-- Storage: task-submissions bucket & Policies
 -- ============================================
--- INSERT INTO storage.buckets (id, name, public) VALUES ('task-submissions', 'task-submissions', true);
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('task-submissions', 'task-submissions', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Allow public uploads to task-submissions" ON storage.objects;
+CREATE POLICY "Allow public uploads to task-submissions" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'task-submissions');
+
+DROP POLICY IF EXISTS "Allow public viewing of task-submissions" ON storage.objects;
+CREATE POLICY "Allow public viewing of task-submissions" ON storage.objects FOR SELECT USING (bucket_id = 'task-submissions');
+
+DROP POLICY IF EXISTS "Allow public delete for task-submissions" ON storage.objects;
+CREATE POLICY "Allow public delete for task-submissions" ON storage.objects FOR DELETE USING (bucket_id = 'task-submissions');

@@ -23,6 +23,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _classCodeController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -35,6 +36,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
+    _classCodeController.dispose();
     super.dispose();
   }
 
@@ -50,6 +52,7 @@ class _SignupScreenState extends State<SignupScreen> {
       password: _passwordController.text,
       role: _selectedRole,
       phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+      classCode: _classCodeController.text.trim().isNotEmpty ? _classCodeController.text.trim() : null,
     );
 
     setState(() => _isLoading = false);
@@ -230,6 +233,19 @@ class _SignupScreenState extends State<SignupScreen> {
                   if (value.replaceAll(RegExp(r'[\s\-+]'), '').length < 10) {
                     return 'Enter a valid phone number';
                   }
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            CustomTextField(
+              controller: _classCodeController,
+              label: 'Class Code',
+              hint: 'Enter your class code',
+              prefixIcon: Icons.group_rounded,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Class Code is required';
                 }
                 return null;
               },

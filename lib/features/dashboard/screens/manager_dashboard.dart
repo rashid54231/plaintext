@@ -16,6 +16,8 @@ import '../../tasks/screens/task_detail_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
 import 'analytics_screen.dart';
+import 'calendar_screen.dart';
+import 'leaderboard_screen.dart';
 
 class ManagerDashboard extends StatefulWidget {
   const ManagerDashboard({super.key});
@@ -44,11 +46,14 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
   Future<void> _loadData() async {
     final up = context.read<UserProvider>();
-    final tp = context.read<TaskProvider>();
     await up.loadStudents();
     if (up.currentUser != null) {
-      await tp.loadAllTasks();
-      await tp.loadAssignedTasks(up.currentUser!.id!);
+      final taskProvider = context.read<TaskProvider>();
+      await Future.wait([
+        taskProvider.loadAllTasks(),
+        taskProvider.loadAssignedTasks(up.currentUser!.id!),
+      ]);
+      taskProvider.initRealtime(up.currentUser!.id!, true);
     }
   }
 
@@ -119,6 +124,8 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildWelcomeHeader(user),
+              const SizedBox(height: 16),
+              _buildActionButtons(context),
               const SizedBox(height: 24),
               _buildStatsGrid(),
               const SizedBox(height: 24),
@@ -127,6 +134,40 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalendarScreen())),
+            icon: const Icon(Icons.calendar_month_rounded, size: 18),
+            label: Text('Calendar', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryLight.withOpacity(0.2),
+              foregroundColor: AppColors.primary,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LeaderboardScreen())),
+            icon: const Icon(Icons.emoji_events_rounded, size: 18),
+            label: Text('Leaderboard', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700).withOpacity(0.2),
+              foregroundColor: const Color(0xFFDAA520),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

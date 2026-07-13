@@ -12,6 +12,8 @@ import '../../../shared/widgets/shimmer_loader.dart';
 import '../../tasks/screens/task_detail_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
+import 'calendar_screen.dart';
+import 'leaderboard_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -42,6 +44,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final up = context.read<UserProvider>();
     if (up.currentUser != null) {
       await context.read<TaskProvider>().loadUserTasks(up.currentUser!.id!);
+      context.read<TaskProvider>().initRealtime(up.currentUser!.id!, false);
     }
   }
 
@@ -61,7 +64,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
         index: _currentIndex,
         children: [
           _buildHomeTab(user),
+          const CalendarScreen(),
           _buildMyTasksTab(),
+          const LeaderboardScreen(),
           _buildProfileTab(user),
         ],
       ),
@@ -75,11 +80,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
           onTap: (i) => setState(() => _currentIndex = i),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
+          selectedLabelStyle: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: GoogleFonts.inter(fontSize: 10),
+          type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.task_rounded), label: 'My Tasks'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_rounded), label: 'Calendar'),
+            BottomNavigationBarItem(icon: Icon(Icons.task_rounded), label: 'Tasks'),
+            BottomNavigationBarItem(icon: Icon(Icons.emoji_events_rounded), label: 'Ranks'),
             BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
           ],
         ),

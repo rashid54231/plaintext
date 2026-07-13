@@ -166,7 +166,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               _buildReviewSection(card, textPrimary, textSecondary),
             ],
             const SizedBox(height: 24),
-            if (!isManager && !_task.isCompleted) _buildStudentActions(),
+            if (!isManager) _buildStudentActions(),
             if (isManager) _buildManagerActions(),
             const SizedBox(height: 20),
           ],
@@ -461,6 +461,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             Icon(Icons.rate_review_rounded, color: AppColors.info, size: 20),
             const SizedBox(width: 8),
             Text('Manager Review', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+            const Spacer(),
+            if (_task.marks != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text('Grade: ${_task.marks}${_task.maxMarks != null ? ' / ${_task.maxMarks}' : ''}',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success)),
+              ),
           ]),
           const SizedBox(height: 12),
           Text(_task.reviewComment!, style: GoogleFonts.inter(fontSize: 14, color: textSecondary, height: 1.5)),
@@ -489,34 +497,37 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: CustomButton(
-            text: 'Submit & Mark Complete',
-            onPressed: () async {
-              final success = await context.read<TaskProvider>().toggleComplete(_task.id!);
-              if (success && mounted) {
-                setState(() => _task = _task.copyWith(
-                  isCompleted: true, completedDate: DateTime.now(), status: TaskStatus.completed));
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: const Text('Task submitted successfully!'),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ));
-              }
-            },
-            backgroundColor: AppColors.success,
-            icon: Icons.send_rounded,
+        if (!_task.isCompleted) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: CustomButton(
+              text: 'Submit & Mark Complete',
+              onPressed: () async {
+                final success = await context.read<TaskProvider>().toggleComplete(_task.id!);
+                if (success && mounted) {
+                  setState(() => _task = _task.copyWith(
+                    isCompleted: true, completedDate: DateTime.now(), status: TaskStatus.completed));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Task submitted successfully!'),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ));
+                }
+              },
+              backgroundColor: AppColors.success,
+              icon: Icons.send_rounded,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
 
   Widget _buildManagerActions() {
     final reviewCtrl = TextEditingController(text: _task.reviewComment ?? '');
+    final marksCtrl = TextEditingController(text: _task.marks?.toString() ?? '');
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -539,6 +550,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               contentPadding: const EdgeInsets.all(12),
             ),
           ),
+          if (_task.maxMarks != null) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: marksCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'Assign Marks (out of ${_task.maxMarks})',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                prefixIcon: const Icon(Icons.star_rounded, color: AppColors.primary),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -546,10 +571,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 child: CustomButton(
                   text: 'Approve',
                   onPressed: () async {
+                    int? marks = int.tryParse(marksCtrl.text.trim());
                     await context.read<TaskProvider>().reviewTask(
-                      _task.id!, approved: true, comment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task approved ✅');
+                      _task.id!, approved: true, comment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task approved ✅', marks: marks);
                     if (mounted) {
-                      setState(() => _task = _task.copyWith(reviewComment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task approved ✅'));
+                      setState(() => _task = _task.copyWith(reviewComment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task approved ✅', marks: marks));
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: const Text('Task approved'),
                         backgroundColor: AppColors.success,
@@ -567,10 +593,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 child: CustomButton(
                   text: 'Reject',
                   onPressed: () async {
+                    int? marks = int.tryParse(marksCtrl.text.trim());
                     await context.read<TaskProvider>().reviewTask(
-                      _task.id!, approved: false, comment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task needs revision ❌');
+                      _task.id!, approved: false, comment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task needs revision ❌', marks: marks);
                     if (mounted) {
-                      setState(() => _task = _task.copyWith(reviewComment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task needs revision ❌'));
+                      setState(() => _task = _task.copyWith(reviewComment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task needs revision ❌', marks: marks));
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: const Text('Task rejected'),
                         backgroundColor: AppColors.error,
