@@ -325,8 +325,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 children: [
                   Text(task.title,
                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600,
-                      color: task.isCompleted ? _textHint : _textPrimary,
-                      decoration: task.isCompleted ? TextDecoration.lineThrough : null)),
+                      color: task.isCompleted ? _textHint : _textPrimary)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -344,11 +343,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _priorityColor(task.priority).withValues(alpha: 0.1),
+                color: task.isCompleted ? AppColors.success.withValues(alpha: 0.1) : _priorityColor(task.priority).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(task.priority.name.toUpperCase(),
-                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: _priorityColor(task.priority))),
+              child: Text(task.isCompleted ? 'DONE' : task.priority.name.toUpperCase(),
+                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: task.isCompleted ? AppColors.success : _priorityColor(task.priority))),
             ),
           ],
         ),
@@ -521,18 +520,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _priorityColor(task.priority).withValues(alpha: 0.1),
+                    color: task.isCompleted ? AppColors.success.withValues(alpha: 0.1) : _priorityColor(task.priority).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(task.priority.name.toUpperCase(),
-                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: _priorityColor(task.priority))),
+                  child: Text(task.isCompleted ? 'DONE' : task.priority.name.toUpperCase(),
+                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: task.isCompleted ? AppColors.success : _priorityColor(task.priority))),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(task.title,
                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600,
-                      color: task.isCompleted ? _textHint : _textPrimary,
-                      decoration: task.isCompleted ? TextDecoration.lineThrough : null),
+                      color: task.isCompleted ? _textHint : _textPrimary),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
                 if (task.isCompleted) ...[

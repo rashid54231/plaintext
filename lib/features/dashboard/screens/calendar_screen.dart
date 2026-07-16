@@ -29,9 +29,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   List<Task> _getEventsForDay(DateTime day, List<Task> tasks) {
     return tasks.where((t) {
-      return t.dueDate.year == day.year &&
+      final isDueOnDay = t.dueDate.year == day.year &&
           t.dueDate.month == day.month &&
           t.dueDate.day == day.day;
+      final isAssignedOnDay = t.assignedDate.year == day.year &&
+          t.assignedDate.month == day.month &&
+          t.assignedDate.day == day.day;
+      return isDueOnDay || isAssignedOnDay;
     }).toList();
   }
 
