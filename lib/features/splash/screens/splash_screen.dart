@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../../../providers/user_provider.dart';
 import 'package:provider/provider.dart';
-import '../../auth/screens/login_screen.dart';
+import '../../../screens/login_screen.dart';
 import '../../dashboard/screens/manager_dashboard.dart';
 import '../../dashboard/screens/student_dashboard.dart';
 

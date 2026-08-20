@@ -10,7 +10,7 @@ import '../../../providers/user_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/shimmer_loader.dart';
 import '../../tasks/screens/task_detail_screen.dart';
-import '../../auth/screens/login_screen.dart';
+import '../../../screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
 import 'calendar_screen.dart';
 import 'leaderboard_screen.dart';

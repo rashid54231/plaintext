@@ -13,7 +13,7 @@ import '../../../shared/widgets/shimmer_loader.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../tasks/screens/create_task_screen.dart';
 import '../../tasks/screens/task_detail_screen.dart';
-import '../../auth/screens/login_screen.dart';
+import '../../../screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
 import 'analytics_screen.dart';
 import 'calendar_screen.dart';

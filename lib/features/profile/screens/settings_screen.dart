@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../auth/screens/login_screen.dart';
+import '../../../screens/login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
