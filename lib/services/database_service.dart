@@ -88,6 +88,14 @@ class DatabaseService {
     }
   }
 
+  Future<void> updateUserAvatar(String userId, String avatarUrl) async {
+    try {
+      await _supabase.from('users').update({'avatar_url': avatarUrl}).eq('id', userId);
+    } catch (e) {
+      throw Exception('Failed to update avatar: $e');
+    }
+  }
+
   // ============================================
   // TASK OPERATIONS
   // ============================================

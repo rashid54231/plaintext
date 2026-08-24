@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../models/task.dart';
@@ -10,7 +11,7 @@ import '../../../providers/user_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/shimmer_loader.dart';
 import '../../tasks/screens/task_detail_screen.dart';
-import '../../../screens/login_screen.dart';
+import '../../auth/screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
 import 'calendar_screen.dart';
 import 'leaderboard_screen.dart';
@@ -44,7 +45,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final up = context.read<UserProvider>();
     if (up.currentUser != null) {
       await context.read<TaskProvider>().loadUserTasks(up.currentUser!.id!);
-      context.read<TaskProvider>().initRealtime(up.currentUser!.id!, false);
+      if (mounted) {
+        context.read<TaskProvider>().initRealtime(up.currentUser!.id!, false);
+      }
     }
   }
 
@@ -408,9 +411,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
             t.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
             t.description.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
         }
-        if (_filterStatus == 'Pending') tasks = tasks.where((t) => !t.isCompleted && !t.isOverdue).toList();
-        else if (_filterStatus == 'Completed') tasks = tasks.where((t) => t.isCompleted).toList();
-        else if (_filterStatus == 'Overdue') tasks = tasks.where((t) => t.isOverdue).toList();
+        if (_filterStatus == 'Pending') {
+          tasks = tasks.where((t) => !t.isCompleted && !t.isOverdue).toList();
+        } else if (_filterStatus == 'Completed') {
+          tasks = tasks.where((t) => t.isCompleted).toList();
+        } else if (_filterStatus == 'Overdue') {
+          tasks = tasks.where((t) => t.isOverdue).toList();
+        }
 
         return SafeArea(
           child: Column(
@@ -578,16 +585,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            Container(
-              width: 100, height: 100,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: Text(
-                user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
-                style: GoogleFonts.inter(fontSize: 38, fontWeight: FontWeight.bold, color: Colors.white),
-              )),
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+              backgroundImage: user?.avatarUrl != null
+                  ? CachedNetworkImageProvider(user!.avatarUrl!)
+                  : null,
+              child: user?.avatarUrl == null
+                  ? Text(
+                      user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
+                      style: GoogleFonts.inter(
+                        fontSize: 38,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF10B981),
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(height: 16),
             Text(user?.name ?? '', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),

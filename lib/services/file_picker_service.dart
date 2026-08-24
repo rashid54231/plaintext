@@ -145,6 +145,38 @@ class FilePickerService {
     return urls;
   }
 
+  Future<String?> uploadAvatar({
+    required String userId,
+    required PlatformFile file,
+  }) async {
+    if (file.path == null) return null;
+
+    try {
+      final filePath = file.path!;
+      final fileName = file.name;
+      final ext = p.extension(fileName);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final storagePath = '$userId/avatar_$timestamp$ext';
+
+      final supabase = SupabaseConfig.client;
+      final fileObj = File(filePath);
+      final bytes = await fileObj.readAsBytes();
+
+      // Upload or overwrite the user's avatar
+      await supabase.storage
+          .from('avatars')
+          .uploadBinary(storagePath, bytes);
+
+      final publicUrl = supabase.storage
+          .from('avatars')
+          .getPublicUrl(storagePath);
+
+      return publicUrl;
+    } catch (e) {
+      throw Exception('Failed to upload avatar: $e');
+    }
+  }
+
   // ============================================
   // FILE OPERATIONS
   // ============================================

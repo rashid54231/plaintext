@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
+import '../services/notification_service.dart';
 import '../config/supabase_config.dart';
 
 class TaskProvider extends ChangeNotifier {
@@ -207,6 +208,8 @@ class TaskProvider extends ChangeNotifier {
       final updatedTask = task.copyWith(
         reviewComment: comment,
         marks: marks,
+        isCompleted: approved ? task.isCompleted : false,
+        status: approved ? task.status : TaskStatus.inProgress,
       );
 
       await _db.updateTask(updatedTask);
@@ -243,7 +246,18 @@ class TaskProvider extends ChangeNotifier {
         loadAllTasks();
         loadAssignedTasks(userId);
       } else {
-        loadUserTasks(userId);
+        final oldTaskIds = _userTasks.map((t) => t.id).toSet();
+        
+        loadUserTasks(userId).then((_) {
+          if (oldTaskIds.isNotEmpty) { // Only notify if it's not the initial load
+            final newTaskIds = _userTasks.map((t) => t.id).toSet();
+            final newlyAdded = newTaskIds.difference(oldTaskIds);
+            for (final id in newlyAdded) {
+              final task = _userTasks.firstWhere((t) => t.id == id);
+              NotificationService.instance.notifyTaskAssigned(task.title);
+            }
+          }
+        });
       }
     });
   }

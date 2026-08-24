@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../models/task.dart';
@@ -13,7 +14,7 @@ import '../../../shared/widgets/shimmer_loader.dart';
 import '../../../shared/widgets/status_badge.dart';
 import '../../tasks/screens/create_task_screen.dart';
 import '../../tasks/screens/task_detail_screen.dart';
-import '../../../screens/login_screen.dart';
+import '../../auth/screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
 import 'analytics_screen.dart';
 import 'calendar_screen.dart';
@@ -412,8 +413,13 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    backgroundImage: student.avatarUrl != null
+                        ? CachedNetworkImageProvider(student.avatarUrl!)
+                        : null,
+                    child: student.avatarUrl == null
+                        ? Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
+                            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary))
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -691,13 +697,22 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            Container(
-              width: 100, height: 100,
-              decoration: const BoxDecoration(gradient: AppColors.primaryGradient, shape: BoxShape.circle),
-              child: Center(child: Text(
-                user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
-                style: GoogleFonts.inter(fontSize: 38, fontWeight: FontWeight.bold, color: Colors.white),
-              )),
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundImage: user?.avatarUrl != null
+                  ? CachedNetworkImageProvider(user!.avatarUrl!)
+                  : null,
+              child: user?.avatarUrl == null
+                  ? Text(
+                      user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
+                      style: GoogleFonts.inter(
+                        fontSize: 38,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(height: 16),
             Text(user?.name ?? '', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),

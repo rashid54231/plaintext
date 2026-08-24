@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../services/file_picker_service.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../../screens/login_screen.dart';
+import '../../auth/screens/login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -29,6 +31,8 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildProfileHeader(context, textPrimary, textSecondary),
+            const SizedBox(height: 32),
             _sectionHeader('Appearance', textSecondary),
             _buildCard(
               card,
@@ -135,6 +139,86 @@ class SettingsScreen extends StatelessWidget {
           letterSpacing: 1.2,
           color: color,
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, Color textPrimary, Color textSecondary) {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () async {
+              final result = await FilePickerService.instance.pickImages();
+              if (result != null && result.files.isNotEmpty) {
+                if (context.mounted) {
+                  final success = await context.read<UserProvider>().updateAvatar(result.files.first);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success ? 'Profile picture updated!' : 'Failed to update profile picture'),
+                        backgroundColor: success ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundImage: user.avatarUrl != null
+                      ? CachedNetworkImageProvider(user.avatarUrl!)
+                      : null,
+                  child: user.avatarUrl == null
+                      ? Text(
+                          user.name[0].toUpperCase(),
+                          style: GoogleFonts.inter(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary),
+                        )
+                      : null,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.edit, size: 18, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            user.name,
+            style: GoogleFonts.inter(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            user.email,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

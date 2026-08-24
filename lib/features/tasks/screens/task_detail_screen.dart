@@ -56,7 +56,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       final urls = await FilePickerService.instance.uploadMultipleFiles(
         taskId: _task.id!, files: result.files);
       _uploadedFiles.addAll(urls);
-      final updatedTask = _task.copyWith(submissionPath: _uploadedFiles.first);
+      final updatedTask = _task.copyWith(submissionPaths: _uploadedFiles);
       await context.read<TaskProvider>().updateTask(updatedTask);
       setState(() { _task = updatedTask; _isUploading = false; });
       if (mounted) {

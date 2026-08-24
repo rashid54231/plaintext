@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:ui';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +9,7 @@ import '../../../models/user.dart';
 import '../../../providers/user_provider.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_textfield.dart';
+import '../../../services/file_picker_service.dart';
 import '../../dashboard/screens/manager_dashboard.dart';
 import '../../dashboard/screens/student_dashboard.dart';
 
@@ -24,10 +28,12 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _classCodeController = TextEditingController();
+  final _managerPasscodeController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   Role _selectedRole = Role.student;
+  PlatformFile? _selectedAvatar;
 
   @override
   void dispose() {
@@ -37,11 +43,24 @@ class _SignupScreenState extends State<SignupScreen> {
     _confirmPasswordController.dispose();
     _phoneController.dispose();
     _classCodeController.dispose();
+    _managerPasscodeController.dispose();
     super.dispose();
   }
 
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (_selectedRole == Role.manager && _managerPasscodeController.text.trim() != 'MANAGER2026') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Invalid Manager Passcode'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -53,6 +72,7 @@ class _SignupScreenState extends State<SignupScreen> {
       role: _selectedRole,
       phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
       classCode: _classCodeController.text.trim().isNotEmpty ? _classCodeController.text.trim() : null,
+      avatarFile: _selectedAvatar,
     );
 
     setState(() => _isLoading = false);
@@ -162,19 +182,24 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildSignupCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
       child: Form(
         key: _formKey,
         child: Column(
@@ -188,7 +213,44 @@ class _SignupScreenState extends State<SignupScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            Center(
+              child: GestureDetector(
+                onTap: () async {
+                  final result = await FilePickerService.instance.pickImages();
+                  if (result != null && result.files.isNotEmpty) {
+                    setState(() => _selectedAvatar = result.files.first);
+                  }
+                },
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundImage: _selectedAvatar != null && _selectedAvatar!.path != null
+                          ? FileImage(File(_selectedAvatar!.path!))
+                          : null,
+                      child: _selectedAvatar == null
+                          ? const Icon(Icons.person, size: 40, color: AppColors.primary)
+                          : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             CustomTextField(
               controller: _nameController,
               label: 'Full Name',
@@ -315,6 +377,34 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 12),
             _buildRoleSelector(),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: _selectedRole == Role.manager ? 80 : 0,
+              curve: Curves.easeInOut,
+              child: ClipRRect(
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      CustomTextField(
+                        controller: _managerPasscodeController,
+                        label: 'Manager Passcode',
+                        hint: 'Enter secret passcode',
+                        prefixIcon: Icons.admin_panel_settings_rounded,
+                        obscureText: true,
+                        validator: (value) {
+                          if (_selectedRole == Role.manager && (value == null || value.isEmpty)) {
+                            return 'Passcode is required for Managers';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             CustomButton(
               text: 'Create Account',
@@ -325,7 +415,7 @@ class _SignupScreenState extends State<SignupScreen> {
           ],
         ),
       ),
-    );
+    )));
   }
 
   Widget _buildRoleSelector() {

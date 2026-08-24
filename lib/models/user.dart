@@ -8,6 +8,7 @@ class User {
   final Role role;
   final String? phone;
   final String? classCode;
+  final String? avatarUrl;
   final DateTime createdAt;
 
   User({
@@ -18,6 +19,7 @@ class User {
     required this.role,
     this.phone,
     this.classCode,
+    this.avatarUrl,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -29,6 +31,7 @@ class User {
       'role': role.name,
       'phone': phone ?? '',
       'class_code': classCode,
+      'avatar_url': avatarUrl,
       'created_at': createdAt.toIso8601String(),
     };
     if (id != null) map['id'] = id;
@@ -44,6 +47,7 @@ class User {
       role: map['role'] == 'manager' ? Role.manager : Role.student,
       phone: map['phone'] as String?,
       classCode: map['class_code'] as String?,
+      avatarUrl: map['avatar_url'] as String?,
       createdAt: DateTime.tryParse(map['created_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
@@ -56,6 +60,7 @@ class User {
     Role? role,
     String? phone,
     String? classCode,
+    String? avatarUrl,
     DateTime? createdAt,
   }) {
     return User(
@@ -66,6 +71,7 @@ class User {
       role: role ?? this.role,
       phone: phone ?? this.phone,
       classCode: classCode ?? this.classCode,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       createdAt: createdAt ?? this.createdAt,
     );
   }

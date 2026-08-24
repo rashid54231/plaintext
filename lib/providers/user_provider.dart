@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/user.dart';
 import '../services/database_service.dart';
+import '../services/file_picker_service.dart';
 
 class UserProvider extends ChangeNotifier {
   final DatabaseService _db = DatabaseService.instance;
@@ -58,6 +60,7 @@ class UserProvider extends ChangeNotifier {
     required Role role,
     String? phone,
     String? classCode,
+    PlatformFile? avatarFile,
   }) async {
     _isLoading = true;
     _error = null;
@@ -82,7 +85,19 @@ class UserProvider extends ChangeNotifier {
       );
 
       final id = await _db.insertUserAndGetId(user);
-      _currentUser = user.copyWith(id: id);
+      
+      String? avatarUrl;
+      if (avatarFile != null && id != null) {
+        avatarUrl = await FilePickerService.instance.uploadAvatar(
+          userId: id, 
+          file: avatarFile
+        );
+        if (avatarUrl != null) {
+          await _db.updateUserAvatar(id, avatarUrl);
+        }
+      }
+
+      _currentUser = user.copyWith(id: id, avatarUrl: avatarUrl);
 
       _isLoading = false;
       notifyListeners();
@@ -140,6 +155,38 @@ class UserProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _error = 'Update failed: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateAvatar(PlatformFile file) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (_currentUser == null || _currentUser!.id == null) return false;
+
+      final avatarUrl = await FilePickerService.instance.uploadAvatar(
+        userId: _currentUser!.id!,
+        file: file,
+      );
+
+      if (avatarUrl != null) {
+        await _db.updateUserAvatar(_currentUser!.id!, avatarUrl);
+        _currentUser = _currentUser!.copyWith(avatarUrl: avatarUrl);
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Avatar update failed: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
       return false;

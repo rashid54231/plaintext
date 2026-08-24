@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL CHECK (role IN ('manager', 'student')),
   phone TEXT DEFAULT '',
   class_code TEXT,
+  avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -26,7 +27,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   completed_date TIMESTAMPTZ,
   assigned_to_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   assigned_by_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  submission_path TEXT,
+  submission_path TEXT, -- Note: Now stores a JSON-encoded array of file paths (List<String>)
   review_comment TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'inProgress', 'completed', 'overdue')),
   priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
@@ -139,3 +140,22 @@ CREATE POLICY "Allow public viewing of task-submissions" ON storage.objects FOR 
 
 DROP POLICY IF EXISTS "Allow public delete for task-submissions" ON storage.objects;
 CREATE POLICY "Allow public delete for task-submissions" ON storage.objects FOR DELETE USING (bucket_id = 'task-submissions');
+
+-- ============================================
+-- Storage: avatars bucket & Policies
+-- ============================================
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Allow public uploads to avatars" ON storage.objects;
+CREATE POLICY "Allow public uploads to avatars" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Allow public viewing of avatars" ON storage.objects;
+CREATE POLICY "Allow public viewing of avatars" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Allow public delete for avatars" ON storage.objects;
+CREATE POLICY "Allow public delete for avatars" ON storage.objects FOR DELETE USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Allow public update for avatars" ON storage.objects;
+CREATE POLICY "Allow public update for avatars" ON storage.objects FOR UPDATE USING (bucket_id = 'avatars');

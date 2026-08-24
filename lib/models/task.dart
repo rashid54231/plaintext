@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 enum TaskStatus { pending, inProgress, completed, overdue }
 enum Priority { low, medium, high }
 
@@ -10,7 +12,7 @@ class Task {
   final bool isCompleted;
   final DateTime? completedDate;
   final String assignedByUserId;
-  final String? submissionPath;
+  final List<String> submissionPaths;
   final String? reviewComment;
   final TaskStatus status;
   final Priority priority;
@@ -28,7 +30,7 @@ class Task {
     this.isCompleted = false,
     this.completedDate,
     required this.assignedByUserId,
-    this.submissionPath,
+    this.submissionPaths = const [],
     this.reviewComment,
     this.status = TaskStatus.pending,
     this.priority = Priority.medium,
@@ -48,7 +50,7 @@ class Task {
       'completed_date': completedDate?.toIso8601String(),
       'assigned_by_user_id': assignedByUserId,
       'assigned_to_user_id': assignedUserIds.isNotEmpty ? assignedUserIds.first : assignedByUserId,
-      'submission_path': submissionPath,
+      'submission_path': submissionPaths.isNotEmpty ? jsonEncode(submissionPaths) : null,
       'review_comment': reviewComment,
       'status': status.name,
       'priority': priority.name,
@@ -72,7 +74,7 @@ class Task {
           ? DateTime.tryParse(map['completed_date'] as String)
           : null,
       assignedByUserId: map['assigned_by_user_id'] as String? ?? '',
-      submissionPath: map['submission_path'] as String?,
+      submissionPaths: _parseSubmissionPaths(map['submission_path']),
       reviewComment: map['review_comment'] as String?,
       status: _parseStatus(map['status'] as String?),
       priority: _parsePriority(map['priority'] as String?),
@@ -83,6 +85,20 @@ class Task {
       marks: map['marks'] as int?,
       maxMarks: map['max_marks'] as int?,
     );
+  }
+
+  static List<String> _parseSubmissionPaths(dynamic value) {
+    if (value == null) return [];
+    if (value is String) {
+      if (value.trim().isEmpty) return [];
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is List) return List<String>.from(decoded);
+      } catch (_) {
+        return [value]; // Fallback for old single string data
+      }
+    }
+    return [];
   }
 
   static TaskStatus _parseStatus(String? value) {
@@ -108,7 +124,7 @@ class Task {
     bool? isCompleted,
     DateTime? completedDate,
     String? assignedByUserId,
-    String? submissionPath,
+    List<String>? submissionPaths,
     String? reviewComment,
     TaskStatus? status,
     Priority? priority,
@@ -126,7 +142,7 @@ class Task {
       isCompleted: isCompleted ?? this.isCompleted,
       completedDate: completedDate ?? this.completedDate,
       assignedByUserId: assignedByUserId ?? this.assignedByUserId,
-      submissionPath: submissionPath ?? this.submissionPath,
+      submissionPaths: submissionPaths ?? this.submissionPaths,
       reviewComment: reviewComment ?? this.reviewComment,
       status: status ?? this.status,
       priority: priority ?? this.priority,
