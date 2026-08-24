@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../providers/user_provider.dart';
 import 'signup_screen.dart';
@@ -10,6 +11,7 @@ import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../dashboard/screens/manager_dashboard.dart';
 import '../../dashboard/screens/student_dashboard.dart';
+import 'widgets/animated_auth_background.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -74,71 +76,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: isDark 
-              ? const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                )
-              : AppColors.splashGradient,
-        ),
-        child: Stack(
-          children: [
-            // Abstract background decorative circles
-            Positioned(
-              top: -100,
-              right: -50,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: (isDark ? AppColors.secondary : Colors.white).withOpacity(0.15),
-                  boxShadow: [
-                    BoxShadow(color: AppColors.secondary.withOpacity(0.2), blurRadius: 100)
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -50,
-              left: -100,
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: (isDark ? AppColors.primary : Colors.white).withOpacity(0.15),
-                  boxShadow: [
-                    BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 100)
-                  ],
-                ),
-              ),
-            ),
-            
-            // Main Content
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildHeader(isDark),
-                      const SizedBox(height: 40),
-                      _buildLoginCard(isDark),
-                      const SizedBox(height: 32),
-                      _buildSignUpLink(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+      body: AnimatedAuthBackground(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildHeader(isDark).animate().fade(duration: 600.ms).slideY(begin: 0.2, curve: Curves.easeOutQuad),
+              const SizedBox(height: 40),
+              _buildLoginCard(isDark).animate().fade(duration: 800.ms, delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOutQuad),
+              const SizedBox(height: 32),
+              _buildSignUpLink().animate().fade(duration: 800.ms, delay: 400.ms),
+            ],
+          ),
         ),
       ),
     );
@@ -168,13 +118,20 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        Text(
-          'Welcome Back',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 32,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-            letterSpacing: -0.5,
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Colors.white, Color(0xFFE2E8F0)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(bounds),
+          child: Text(
+            'Welcome Back',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -198,17 +155,17 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.4) : Colors.white.withOpacity(0.85),
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.7),
             borderRadius: BorderRadius.circular(32),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.6), 
+              color: isDark ? Colors.white.withOpacity(0.15) : Colors.white.withOpacity(0.8), 
               width: 1.5
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
+                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
               ),
             ],
           ),
