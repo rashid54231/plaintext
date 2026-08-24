@@ -70,13 +70,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Text('Leaderboard',
-                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),
             ),
             Expanded(
               child: _isLoading
                   ? const ShimmerList()
                   : _leaderboardData.isEmpty
-                      ? Center(child: Text('No students available yet', style: GoogleFonts.inter(color: _textSecondary)))
+                      ? Center(child: Text('No students available yet', style: GoogleFonts.plusJakartaSans(color: _textSecondary)))
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           itemCount: _leaderboardData.length,
@@ -95,21 +95,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  Text('#${index + 1}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: index < 3 ? AppColors.primary : AppColors.textHint)),
+                                  Text('#${index + 1}', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: index < 3 ? AppColors.primary : AppColors.textHint)),
                                   const SizedBox(width: 16),
                                   CircleAvatar(
                                     radius: 20,
                                     backgroundColor: index == 0 ? const Color(0xFFFFD700).withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.1),
                                     child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: index == 0 ? const Color(0xFFDAA520) : AppColors.primary)),
+                                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: index == 0 ? const Color(0xFFDAA520) : AppColors.primary)),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(student.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _textPrimary)),
-                                        Text('$points Points', style: GoogleFonts.inter(fontSize: 12, color: _textSecondary)),
+                                        Text(student.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: _textPrimary)),
+                                        Text('$points Points', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary)),
                                       ],
                                     ),
                                   ),

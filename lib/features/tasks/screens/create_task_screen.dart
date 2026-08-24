@@ -140,7 +140,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Select Students (${_selectedStudentIds.length} selected)',
-                                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.bold)),
+                                style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.bold)),
                             TextButton(
                               onPressed: () {
                                 setState(() {
@@ -154,7 +154,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               },
                               child: Text(
                                 _selectedStudentIds.length == _students.length ? 'Deselect All' : 'Select All',
-                                style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.plusJakartaSans(color: AppColors.primary, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -168,7 +168,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                 children: [
                                   Icon(Icons.people_outline, size: 48, color: AppColors.textHint),
                                   const SizedBox(height: 12),
-                                  Text('No students registered yet', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                                  Text('No students registered yet', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                                 ],
                               ))
                             : ListView.builder(
@@ -186,13 +186,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                       });
                                       setModal(() {});
                                     },
-                                    title: Text(s.name, style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                                    subtitle: Text(s.email, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                                    title: Text(s.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500)),
+                                    subtitle: Text(s.email, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
                                     secondary: CircleAvatar(
                                       radius: 20,
                                       backgroundColor: isSelected ? AppColors.primary : AppColors.divider,
                                       child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
-                                          style: GoogleFonts.inter(fontWeight: FontWeight.bold,
+                                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold,
                                               color: isSelected ? Colors.white : AppColors.textSecondary)),
                                     ),
                                     activeColor: AppColors.primary,
@@ -381,7 +381,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Category',
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500,
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
         const SizedBox(height: 8),
         Wrap(
@@ -400,7 +400,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     color: isSelected ? AppColors.primary : AppColors.border, width: 1.5),
                 ),
                 child: Text(cat,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, fontWeight: FontWeight.w500,
                     color: isSelected ? Colors.white
                         : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
@@ -437,7 +437,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   color: _selectedStudentIds.isNotEmpty ? AppColors.primary : AppColors.textHint, size: 20),
                 const SizedBox(width: 8),
                 Text('Assign To *',
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
                     color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
                 const Spacer(),
                 if (_selectedStudentIds.isNotEmpty)
@@ -445,14 +445,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
                     child: Text('${_selectedStudentIds.length}',
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
               ],
             ),
             if (_selectedStudentIds.isEmpty) ...[
               const SizedBox(height: 8),
               Text('Tap to select students',
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textHint)),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textHint)),
             ] else ...[
               const SizedBox(height: 12),
               Wrap(
@@ -466,9 +466,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     avatar: CircleAvatar(
                       backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                       child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
                     ),
-                    label: Text(s.name, style: GoogleFonts.inter(fontSize: 12)),
+                    label: Text(s.name, style: GoogleFonts.plusJakartaSans(fontSize: 12)),
                     deleteIcon: const Icon(Icons.close, size: 16),
                     onDeleted: () => setState(() => _selectedStudentIds.remove(id)),
                     backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -490,7 +490,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Due Date & Time',
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500,
+          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
             color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
         const SizedBox(height: 8),
         Row(
@@ -512,7 +512,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(DateFormatter.formatShort(_dueDate),
-                          style: GoogleFonts.inter(fontSize: 13,
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13,
                             color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
                       ),
                     ],
@@ -537,7 +537,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       const Icon(Icons.access_time, color: AppColors.primary, size: 18),
                       const SizedBox(width: 8),
                       Text(_dueTime.format(context),
-                        style: GoogleFonts.inter(fontSize: 13,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13,
                           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
                     ],
                   ),
@@ -555,7 +555,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Priority',
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500,
+          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
             color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
         const SizedBox(height: 8),
         Row(
@@ -580,7 +580,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       Icon(Icons.flag_rounded, color: isSelected ? color : AppColors.textHint, size: 22),
                       const SizedBox(height: 4),
                       Text(p.name[0].toUpperCase() + p.name.substring(1),
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600,
                           color: isSelected ? color : AppColors.textSecondary)),
                     ],
                   ),

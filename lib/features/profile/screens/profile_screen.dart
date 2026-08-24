@@ -121,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Center(
                 child: Text(
                   user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : '?',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -138,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Text(
                 isManager ? 'Manager' : 'Student',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: isManager ? AppColors.primary : AppColors.success,
@@ -196,14 +196,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     color: AppColors.textHint,
                   ),
                 ),
                 Text(
                   value,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,

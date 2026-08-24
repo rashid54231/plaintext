@@ -133,7 +133,7 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10, left: 4),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
@@ -179,7 +179,7 @@ class SettingsScreen extends StatelessWidget {
                   child: user.avatarUrl == null
                       ? Text(
                           user.name[0].toUpperCase(),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primary),
@@ -204,7 +204,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             user.name,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: textPrimary,
@@ -213,7 +213,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             user.email,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               color: textSecondary,
             ),
@@ -259,8 +259,8 @@ class SettingsScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: iconColor, size: 20),
       ),
-      title: Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500, color: textPrimary)),
-      subtitle: Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: textSecondary)),
+      title: Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w500, color: textPrimary)),
+      subtitle: Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: textSecondary)),
       trailing: Switch.adaptive(
         value: value,
         onChanged: onChanged,
@@ -291,7 +291,7 @@ class SettingsScreen extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           fontSize: 15,
           fontWeight: FontWeight.w500,
           color: titleColor ?? textPrimary,
@@ -318,8 +318,8 @@ class SettingsScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: iconColor, size: 20),
       ),
-      title: Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500, color: textPrimary)),
-      trailing: Text(value, style: GoogleFonts.inter(fontSize: 13, color: textSecondary)),
+      title: Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w500, color: textPrimary)),
+      trailing: Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: textSecondary)),
     );
   }
 
@@ -331,8 +331,8 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Logout', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to logout?', style: GoogleFonts.inter()),
+        title: Text('Logout', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to logout?', style: GoogleFonts.plusJakartaSans()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -365,7 +365,7 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: card,
-        title: Text('Change Password', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textPrimary)),
+        title: Text('Change Password', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: textPrimary)),
         content: Form(
           key: formKey,
           child: Column(

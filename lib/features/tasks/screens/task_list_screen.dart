@@ -51,7 +51,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                             const SizedBox(height: 16),
                             Text(
                               'No tasks found',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16,
                                 color: AppColors.textSecondary,
                               ),
@@ -126,7 +126,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: isSelected ? Colors.white : AppColors.textSecondary,
@@ -213,7 +213,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       ),
                       child: Text(
                         task.priority.name.toUpperCase(),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: _getPriorityColor(task.priority),
@@ -224,7 +224,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     Expanded(
                       child: Text(
                         task.title,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
@@ -243,7 +243,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   const SizedBox(height: 8),
                   Text(
                     task.description,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
@@ -258,7 +258,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     const SizedBox(width: 4),
                     Text(
                       assignedUsers.isEmpty ? 'No students' : 'To: $assignedNames',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                       ),
@@ -268,7 +268,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     const SizedBox(width: 4),
                     Text(
                       DateFormatter.formatDueDate(task.dueDate),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         color: task.isOverdue ? AppColors.error : AppColors.textSecondary,
                         fontWeight: task.isOverdue ? FontWeight.w600 : FontWeight.normal,

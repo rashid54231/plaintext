@@ -64,7 +64,7 @@ class AnalyticsScreen extends StatelessWidget {
       children: [
         Text(
           'Overview',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: textPrimary,
@@ -114,8 +114,8 @@ class AnalyticsScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-              Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+              Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+              Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
             ],
           ),
         ],
@@ -139,7 +139,7 @@ class AnalyticsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Task Distribution', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
+          Text('Task Distribution', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
           const SizedBox(height: 20),
           SizedBox(
             height: 200,
@@ -154,7 +154,7 @@ class AnalyticsScreen extends StatelessWidget {
                       color: AppColors.success,
                       title: '$completed',
                       radius: 60,
-                      titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      titleStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   if (pending > 0)
                     PieChartSectionData(
@@ -162,7 +162,7 @@ class AnalyticsScreen extends StatelessWidget {
                       color: AppColors.warning,
                       title: '$pending',
                       radius: 60,
-                      titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      titleStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   if (overdue > 0)
                     PieChartSectionData(
@@ -170,7 +170,7 @@ class AnalyticsScreen extends StatelessWidget {
                       color: AppColors.error,
                       title: '$overdue',
                       radius: 60,
-                      titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      titleStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                 ],
               ),
@@ -195,7 +195,7 @@ class AnalyticsScreen extends StatelessWidget {
       children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 6),
-        Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+        Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
       ],
     );
   }
@@ -219,7 +219,7 @@ class AnalyticsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Priority Breakdown', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
+          Text('Priority Breakdown', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
           const SizedBox(height: 16),
           _progressBar('High', high, total, AppColors.highPriority, textSecondary),
           const SizedBox(height: 12),
@@ -252,7 +252,7 @@ class AnalyticsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('By Category', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
+          Text('By Category', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary)),
           const SizedBox(height: 16),
           ...categories.entries.toList().map((entry) {
             final colors = [AppColors.primary, AppColors.info, AppColors.success, AppColors.warning, AppColors.accent];
@@ -274,8 +274,8 @@ class AnalyticsScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary)),
-            Text('$count (${(pct * 100).toInt()}%)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
+            Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500, color: textSecondary)),
+            Text('$count (${(pct * 100).toInt()}%)', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
           ],
         ),
         const SizedBox(height: 6),

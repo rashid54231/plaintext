@@ -120,6 +120,28 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> promoteToManager(User student) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final updatedUser = student.copyWith(role: Role.manager);
+      await _db.updateUser(updatedUser);
+      
+      // Remove from students list since they are now a manager
+      _students.removeWhere((s) => s.id == student.id);
+      
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to promote user: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> updateProfile({
     String? name,
     String? phone,

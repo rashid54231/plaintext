@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../dashboard/screens/manager_dashboard.dart';
 import '../../dashboard/screens/student_dashboard.dart';
+import '../../../core/constants/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2500),
       vsync: this,
     );
 
@@ -85,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 600),
       ),
     );
   }
@@ -98,85 +99,133 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF6C63FF), Color(0xFF3B82F6), Color(0xFF1E40AF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark 
+              ? const LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                )
+              : AppColors.splashGradient,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: const Icon(
-                        Icons.task_alt_rounded,
-                        size: 64,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
-            SlideTransition(
-              position: _slideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  children: [
-                    Text(
-                      'TaskFlow',
-                      style: GoogleFonts.inter(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Your Productivity Partner',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.8),
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: 1,
-                      ),
-                    ),
+            // Abstract background decorative circles
+            Positioned(
+              top: -100,
+              right: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (isDark ? AppColors.secondary : Colors.white).withOpacity(0.15),
+                  boxShadow: [
+                    BoxShadow(color: AppColors.secondary.withOpacity(0.2), blurRadius: 100)
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 60),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white.withOpacity(0.8),
+            Positioned(
+              bottom: -50,
+              left: -100,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (isDark ? AppColors.primary : Colors.white).withOpacity(0.15),
+                  boxShadow: [
+                    BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 100)
+                  ],
                 ),
               ),
+            ),
+            
+            // Content
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(32),
+                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 30,
+                              )
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.fingerprint_rounded,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+                SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      children: [
+                        Text(
+                          'TaskFlow',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 44,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Your Productivity Partner',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            color: Colors.white.withOpacity(0.85),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 80),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -34,15 +34,24 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final Color textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final Color hintColor = isDark ? AppColors.textHintDark : AppColors.textHint;
+    final Color fillColor = enabled 
+        ? (isDark ? AppColors.surfaceDark : AppColors.surface) 
+        : (isDark ? AppColors.dividerDark : AppColors.divider);
+    final Color borderColor = isDark ? AppColors.borderDark : AppColors.border;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            color: textColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -55,41 +64,46 @@ class CustomTextField extends StatelessWidget {
           enabled: enabled,
           onTap: onTap,
           readOnly: readOnly,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            color: AppColors.textPrimary,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            color: textColor,
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hint ?? label,
+            hintStyle: GoogleFonts.plusJakartaSans(
+              color: hintColor,
+              fontWeight: FontWeight.w400,
+            ),
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: AppColors.textHint, size: 20)
+                ? Icon(prefixIcon, color: hintColor, size: 22)
                 : null,
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: enabled ? AppColors.surface : AppColors.divider,
+            fillColor: fillColor,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: borderColor),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: borderColor),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
             contentPadding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: maxLines > 1 ? 16 : 14,
+              horizontal: 20,
+              vertical: maxLines > 1 ? 16 : 18,
             ),
           ),
         ),

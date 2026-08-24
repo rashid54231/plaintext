@@ -42,7 +42,7 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -52,7 +52,7 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: GoogleFonts.inter(fontSize: 14, color: textSecondary),
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: textSecondary),
               textAlign: TextAlign.center,
             ),
             if (buttonText != null && onButtonPressed != null) ...[

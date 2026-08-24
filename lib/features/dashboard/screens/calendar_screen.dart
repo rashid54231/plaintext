@@ -61,7 +61,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                   child: Text('Calendar',
-                      style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -81,13 +81,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       todayDecoration: BoxDecoration(color: AppColors.primaryLight.withValues(alpha: 0.5), shape: BoxShape.circle),
                       selectedDecoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                       markerDecoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
-                      defaultTextStyle: GoogleFonts.inter(color: _textPrimary),
-                      weekendTextStyle: GoogleFonts.inter(color: AppColors.error),
+                      defaultTextStyle: GoogleFonts.plusJakartaSans(color: _textPrimary),
+                      weekendTextStyle: GoogleFonts.plusJakartaSans(color: AppColors.error),
                     ),
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
-                      titleTextStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
+                      titleTextStyle: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
                       leftChevronIcon: Icon(Icons.chevron_left, color: _textPrimary),
                       rightChevronIcon: Icon(Icons.chevron_right, color: _textPrimary),
                     ),
@@ -106,7 +106,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Text('Tasks on ${DateFormatter.formatShort(_selectedDay ?? _focusedDay)}',
-                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -117,7 +117,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             children: [
                               Icon(Icons.event_busy_rounded, size: 48, color: AppColors.textHint.withValues(alpha: 0.5)),
                               const SizedBox(height: 16),
-                              Text('No tasks for this day', style: GoogleFonts.inter(color: _textSecondary)),
+                              Text('No tasks for this day', style: GoogleFonts.plusJakartaSans(color: _textSecondary)),
                             ],
                           ).animate().fade(),
                         )
@@ -143,10 +143,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(task.title, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: _textPrimary)),
+                                          Text(task.title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14, color: _textPrimary)),
                                           if (task.description.isNotEmpty) ...[
                                             const SizedBox(height: 4),
-                                            Text(task.description, style: GoogleFonts.inter(fontSize: 12, color: _textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                            Text(task.description, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
                                           ]
                                         ],
                                       ),

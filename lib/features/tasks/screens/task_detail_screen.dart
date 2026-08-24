@@ -128,7 +128,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                    child: Text('$_commentCount', style: GoogleFonts.inter(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text('$_commentCount', style: GoogleFonts.plusJakartaSans(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
             ],
@@ -196,7 +196,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(8)),
                 child: Text(_task.priority.name.toUpperCase(),
-                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
               const Spacer(),
               StatusBadge(
@@ -208,14 +208,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(_task.title,
-              style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+              style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
           if (_task.category != null && _task.category!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
               child: Text(_task.category!,
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white)),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white)),
             ),
           ],
         ],
@@ -263,8 +263,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: GoogleFonts.inter(fontSize: 11, color: textHint)),
-              Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: textPrimary)),
+              Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: textHint)),
+              Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500, color: textPrimary)),
             ],
           ),
         ),
@@ -283,12 +283,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           Row(children: [
             Icon(Icons.description_outlined, color: AppColors.primary, size: 20),
             const SizedBox(width: 8),
-            Text('Description', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+            Text('Description', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
           ]),
           const SizedBox(height: 12),
           Text(
             _task.description.isNotEmpty ? _task.description : 'No description provided',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               color: _task.description.isNotEmpty ? textSecondary : AppColors.textHint,
               height: 1.6,
@@ -341,8 +341,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textHint)),
-              Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: color)),
+              Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textHint)),
+              Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500, color: color)),
             ],
           ),
         ),
@@ -362,7 +362,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               Icon(Icons.attach_file_rounded, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Submissions', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+              Text('Submissions', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
               const Spacer(),
               if (_uploadedFiles.isNotEmpty)
                 Container(
@@ -372,7 +372,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text('${_uploadedFiles.length}',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
                 ),
             ],
           ),
@@ -392,7 +392,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 children: [
                   Icon(Icons.cloud_upload_outlined, size: 36, color: textHint),
                   const SizedBox(height: 8),
-                  Text('No files submitted yet', style: GoogleFonts.inter(fontSize: 13, color: textHint)),
+                  Text('No files submitted yet', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: textHint)),
                 ],
               ),
             )
@@ -429,7 +429,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     Expanded(
                       child: Text(
                         fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName,
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimary),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -460,18 +460,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           Row(children: [
             Icon(Icons.rate_review_rounded, color: AppColors.info, size: 20),
             const SizedBox(width: 8),
-            Text('Manager Review', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+            Text('Manager Review', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
             const Spacer(),
             if (_task.marks != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                 child: Text('Grade: ${_task.marks}${_task.maxMarks != null ? ' / ${_task.maxMarks}' : ''}',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success)),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success)),
               ),
           ]),
           const SizedBox(height: 12),
-          Text(_task.reviewComment!, style: GoogleFonts.inter(fontSize: 14, color: textSecondary, height: 1.5)),
+          Text(_task.reviewComment!, style: GoogleFonts.plusJakartaSans(fontSize: 14, color: textSecondary, height: 1.5)),
         ],
       ),
     );
@@ -489,7 +489,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                 : const Icon(Icons.upload_file_rounded, color: AppColors.primary),
             label: Text(_isUploading ? 'Uploading...' : 'Upload File / Photo',
-                style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                style: GoogleFonts.plusJakartaSans(color: AppColors.primary, fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -537,7 +537,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Review Task', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600,
+          Text('Review Task', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600,
               color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
           const SizedBox(height: 12),
           TextField(
@@ -621,8 +621,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete Task', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-        content: Text('Delete "${_task.title}"?', style: GoogleFonts.inter()),
+        title: Text('Delete Task', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+        content: Text('Delete "${_task.title}"?', style: GoogleFonts.plusJakartaSans()),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           TextButton(

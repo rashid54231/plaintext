@@ -109,7 +109,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
             const Text('Comments'),
             Text(
               widget.taskTitle,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 11,
                 color: Colors.white.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w400,
@@ -140,7 +140,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
                             const SizedBox(height: 16),
                             Text(
                               'No comments yet',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16,
                                 color: isDark
                                     ? AppColors.textSecondaryDark
@@ -150,7 +150,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
                             const SizedBox(height: 6),
                             Text(
                               'Start the conversation below',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 13,
                                 color: isDark
                                     ? AppColors.textHintDark
@@ -216,7 +216,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
                         comment.userName.isNotEmpty
                             ? comment.userName[0].toUpperCase()
                             : '?',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: comment.isManager
@@ -228,7 +228,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
                     const SizedBox(width: 6),
                     Text(
                       comment.userName,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: comment.isManager
@@ -250,7 +250,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
                       ),
                       child: Text(
                         comment.isManager ? 'Manager' : 'Student',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: comment.isManager
@@ -286,7 +286,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
               ),
               child: Text(
                 comment.message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   color: isMe
                       ? Colors.white
@@ -301,7 +301,7 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
               padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
               child: Text(
                 DateFormatter.formatTimeAgo(comment.createdAt),
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 10,
                   color: isDark ? AppColors.textHintDark : AppColors.textHint,
                 ),
@@ -338,13 +338,13 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
               controller: _controller,
               maxLines: 3,
               minLines: 1,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: 'Write a comment...',
-                hintStyle: GoogleFonts.inter(
+                hintStyle: GoogleFonts.plusJakartaSans(
                   color: isDark ? AppColors.textHintDark : AppColors.textHint,
                   fontSize: 14,
                 ),

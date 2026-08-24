@@ -82,7 +82,19 @@ class DatabaseService {
 
   Future<void> updateUser(User user) async {
     try {
-      await _supabase.from('users').update(user.toMap()).eq('id', user.id!);
+      final payload = user.toMap();
+      payload.remove('id');
+      payload.remove('created_at');
+      
+      final response = await _supabase
+          .from('users')
+          .update(payload)
+          .eq('id', user.id!)
+          .select();
+          
+      if (response.isEmpty) {
+        throw Exception('User not found or update failed silently.');
+      }
     } catch (e) {
       throw Exception('Failed to update user: $e');
     }
