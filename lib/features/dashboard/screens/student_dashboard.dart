@@ -481,79 +481,112 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
         return SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Column(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('My Tasks (${tp.userTasks.length})',
-                            style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.bold, color: _textPrimary)),
+                        Text('My Tasks',
+                            style: GoogleFonts.plusJakartaSans(fontSize: 28, fontWeight: FontWeight.bold, color: _textPrimary)),
+                        const SizedBox(height: 4),
+                        Text('You have ${tp.userTasks.where((t) => !t.isCompleted).length} active tasks',
+                            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: _textSecondary, fontWeight: FontWeight.w500)),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _searchCtrl,
-                      onChanged: (v) => setState(() => _searchQuery = v),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 14, color: _textPrimary),
-                      decoration: InputDecoration(
-                        hintText: 'Search tasks...',
-                        hintStyle: GoogleFonts.plusJakartaSans(color: _textHint),
-                        prefixIcon: Icon(Icons.search, color: _textHint, size: 20),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear, color: _textHint, size: 18),
-                                onPressed: () { _searchCtrl.clear(); setState(() => _searchQuery = ''); })
-                            : null,
-                        filled: true,
-                        fillColor: _card,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _statuses.map((s) {
-                          final isSelected = _filterStatus == s;
-                          return GestureDetector(
-                            onTap: () => setState(() => _filterStatus = s),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary : _card,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
-                              ),
-                              child: Text(s, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500,
-                                color: isSelected ? Colors.white : _textSecondary)),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
+                      child: const Icon(Icons.assignment_rounded, color: AppColors.primary, size: 28),
+                    )
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _card,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                    border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  ),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 15, color: _textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Search your tasks...',
+                      hintStyle: GoogleFonts.plusJakartaSans(color: _textHint),
+                      prefixIcon: Icon(Icons.search_rounded, color: _textHint, size: 22),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.cancel_rounded, color: _textHint, size: 20),
+                              onPressed: () { _searchCtrl.clear(); setState(() => _searchQuery = ''); })
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: _statuses.map((s) {
+                    final isSelected = _filterStatus == s;
+                    IconData icon;
+                    switch (s) {
+                      case 'All': icon = Icons.dashboard_rounded; break;
+                      case 'Pending': icon = Icons.pending_actions_rounded; break;
+                      case 'Completed': icon = Icons.task_alt_rounded; break;
+                      case 'Overdue': icon = Icons.warning_rounded; break;
+                      default: icon = Icons.circle;
+                    }
+                    return GestureDetector(
+                      onTap: () => setState(() => _filterStatus = s),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                        margin: const EdgeInsets.only(right: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: isSelected ? AppColors.primaryGradient : null,
+                          color: isSelected ? null : _card,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: isSelected ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))] : [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
+                          border: Border.all(color: isSelected ? Colors.transparent : AppColors.border.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(icon, size: 16, color: isSelected ? Colors.white : _textSecondary),
+                            const SizedBox(width: 8),
+                            Text(s, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isSelected ? Colors.white : _textSecondary)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 20),
               Expanded(
                 child: tp.isLoading
                     ? const ShimmerList()
                     : tasks.isEmpty
-                        ? EmptyState(
-                            icon: _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.task_rounded,
-                            title: _searchQuery.isNotEmpty ? 'No results found' : 'No tasks yet',
-                            subtitle: _searchQuery.isNotEmpty
-                                ? 'Try a different search term'
-                                : 'Tasks assigned by your manager will appear here',
-                          )
+                        ? _buildBeautifulEmptyState()
                         : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
                             itemCount: tasks.length,
                             itemBuilder: (context, i) => _buildFullTaskCard(tasks[i]),
                           ),
@@ -565,73 +598,174 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
+  Widget _buildBeautifulEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 140, height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                ),
+              ),
+              Container(
+                width: 100, height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                ),
+              ),
+              Icon(
+                _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.task_rounded,
+                size: 48,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _searchQuery.isNotEmpty ? 'No matches found' : 'You\'re all caught up!',
+            style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              _searchQuery.isNotEmpty
+                  ? 'We couldn\'t find any tasks matching your search. Try different keywords.'
+                  : 'Take a break or check back later for new tasks assigned by your manager.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(fontSize: 15, color: _textSecondary, height: 1.5),
+            ),
+          ),
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFullTaskCard(Task task) {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task))),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: _card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: task.isOverdue ? AppColors.error.withValues(alpha: 0.3)
-                : task.isCompleted ? AppColors.success.withValues(alpha: 0.3)
-                : Colors.transparent),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: task.isCompleted ? AppColors.success.withValues(alpha: 0.1) : _priorityColor(task.priority).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(task.isCompleted ? 'DONE' : task.priority.name.toUpperCase(),
-                      style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.bold, color: task.isCompleted ? AppColors.success : _priorityColor(task.priority))),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(task.title,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600,
-                      color: task.isCompleted ? _textHint : _textPrimary),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
-                if (task.isCompleted) ...[
-                  const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
-                ] else if (task.isOverdue) ...[
-                  const Icon(Icons.warning_rounded, color: AppColors.error, size: 20),
-                ] else ...[
-                  Icon(Icons.circle_outlined, color: AppColors.border, size: 20),
-                ],
-              ],
-            ),
-            if (task.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(task.description,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: _textSecondary),
-                  maxLines: 2, overflow: TextOverflow.ellipsis),
-            ],
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 12, color: _textHint),
-                const SizedBox(width: 4),
-                Text('Assigned: ${DateFormatter.formatShort(task.assignedDate)}',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: _textHint)),
-                const Spacer(),
-                Icon(Icons.event_rounded, size: 12, color: _textHint),
-                const SizedBox(width: 4),
-                Text('Due: ${DateFormatter.formatShort(task.dueDate)}',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11,
-                      color: task.isOverdue ? AppColors.error : _textHint,
-                      fontWeight: task.isOverdue ? FontWeight.w600 : FontWeight.normal)),
-              ],
-            ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: task.isOverdue ? AppColors.error.withValues(alpha: 0.08)
+                  : task.isCompleted ? AppColors.success.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: 15, offset: const Offset(0, 8)
+            )
           ],
+          border: Border.all(
+            color: task.isOverdue ? AppColors.error.withValues(alpha: 0.4)
+                : task.isCompleted ? AppColors.success.withValues(alpha: 0.3)
+                : AppColors.border.withValues(alpha: 0.5),
+            width: 1.5
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () async => await context.read<TaskProvider>().toggleComplete(task.id!),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutBack,
+                      width: 28, height: 28,
+                      margin: const EdgeInsets.only(top: 2, right: 14),
+                      decoration: BoxDecoration(
+                        color: task.isCompleted ? AppColors.success : Colors.transparent,
+                        border: Border.all(color: task.isCompleted ? AppColors.success : AppColors.border, width: 2),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: task.isCompleted ? [BoxShadow(color: AppColors.success.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2))] : null,
+                      ),
+                      child: task.isCompleted ? const Icon(Icons.check_rounded, color: Colors.white, size: 18) : null,
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(task.title,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: task.isCompleted ? _textHint : _textPrimary,
+                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                            decorationColor: _textHint,
+                          ),
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                        if (task.description.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(task.description,
+                              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: _textSecondary, height: 1.4),
+                              maxLines: 2, overflow: TextOverflow.ellipsis),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: task.isCompleted ? AppColors.success.withValues(alpha: 0.1) : _priorityColor(task.priority).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(task.isCompleted ? Icons.check_circle_rounded : Icons.flag_rounded,
+                             size: 14, color: task.isCompleted ? AppColors.success : _priorityColor(task.priority)),
+                        const SizedBox(width: 4),
+                        Text(task.isCompleted ? 'Done' : task.priority.name.toUpperCase(),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: task.isCompleted ? AppColors.success : _priorityColor(task.priority))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.assignment_ind_rounded, size: 14, color: _textHint),
+                      const SizedBox(width: 6),
+                      Text('Assigned ${DateFormatter.formatShort(task.assignedDate)}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: _textHint)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Icon(task.isOverdue ? Icons.warning_rounded : Icons.event_rounded, size: 14, color: task.isOverdue ? AppColors.error : _textHint),
+                      const SizedBox(width: 6),
+                      Text('Due ${DateFormatter.formatShort(task.dueDate)}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12,
+                            color: task.isOverdue ? AppColors.error : _textHint,
+                            fontWeight: task.isOverdue ? FontWeight.bold : FontWeight.w600)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
