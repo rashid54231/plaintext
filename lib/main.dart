@@ -11,6 +11,8 @@ import 'providers/theme_provider.dart';
 import 'services/file_picker_service.dart';
 import 'services/notification_service.dart';
 import 'features/splash/screens/splash_screen.dart';
+import 'services/local_storage_service.dart';
+import 'services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +22,9 @@ void main() async {
     // ignore: deprecated_member_use
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  await LocalStorageService.instance.init();
+  SyncService.instance.init();
 
   await FilePickerService.instance.initialize();
   await NotificationService.instance.initialize();

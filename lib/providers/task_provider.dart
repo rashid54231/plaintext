@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../models/task.dart';
 import '../services/database_service.dart';
+import '../services/local_storage_service.dart';
+import '../services/sync_service.dart';
 import '../services/notification_service.dart';
 import '../config/supabase_config.dart';
 
 class TaskProvider extends ChangeNotifier {
   final DatabaseService _db = DatabaseService.instance;
+  final LocalStorageService _storage = LocalStorageService.instance;
 
   List<Task> _allTasks = [];
   List<Task> _userTasks = [];
@@ -59,12 +63,23 @@ class TaskProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // 1. Local Cache
+    final localTasks = _storage.getAllTasks();
+    if (localTasks.isNotEmpty) {
+      _allTasks = localTasks;
+      _isLoading = false;
+      notifyListeners();
+    }
+
+    // 2. Remote Fetch
     try {
-      _allTasks = await _db.getAllTasks();
+      final remoteTasks = await _db.getAllTasks();
+      _allTasks = remoteTasks;
+      await _storage.saveTasks(remoteTasks);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to load tasks';
+      if (_allTasks.isEmpty) _error = 'Failed to load tasks (Offline)';
       _isLoading = false;
       notifyListeners();
     }
@@ -74,64 +89,91 @@ class TaskProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // 1. Local Cache
+    final localTasks = _storage.getAllTasks();
+    if (localTasks.isNotEmpty) {
+      _userTasks = localTasks.where((t) => t.assignedUserIds.contains(userId) || t.assignedByUserId == userId).toList();
+      _isLoading = false;
+      notifyListeners();
+    }
+
+    // 2. Remote Fetch
     try {
-      _userTasks = await _db.getTasksByUser(userId);
+      final remoteTasks = await _db.getTasksByUser(userId);
+      _userTasks = remoteTasks;
+      await _storage.saveTasks(remoteTasks);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to load tasks';
+      if (_userTasks.isEmpty) _error = 'Failed to load tasks (Offline)';
       _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> loadAssignedTasks(String managerId) async {
+    // 1. Local Cache
+    final localTasks = _storage.getAllTasks();
+    if (localTasks.isNotEmpty) {
+      _assignedTasks = localTasks.where((t) => t.assignedByUserId == managerId).toList();
+      notifyListeners();
+    }
+
+    // 2. Remote Fetch
     try {
-      _assignedTasks = await _db.getTasksAssignedBy(managerId);
+      final remoteTasks = await _db.getTasksAssignedBy(managerId);
+      _assignedTasks = remoteTasks;
+      await _storage.saveTasks(remoteTasks);
       notifyListeners();
     } catch (e) {
-      _error = 'Failed to load assigned tasks';
+      if (_assignedTasks.isEmpty) _error = 'Failed to load assigned tasks (Offline)';
       notifyListeners();
     }
   }
 
   Future<bool> createTask(Task task) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      final id = await _db.insertTask(task);
-      final newTask = task.copyWith(id: id);
-      _allTasks.add(newTask);
-      _assignedTasks.add(newTask);
-      _isLoading = false;
+      final finalTask = task.id == null ? task.copyWith(id: const Uuid().v4()) : task;
+
+      // 1. Save Locally
+      await _storage.saveTask(finalTask);
+      
+      _allTasks.add(finalTask);
+      _assignedTasks.add(finalTask);
+      if (finalTask.assignedUserIds.isNotEmpty) {
+         _userTasks.add(finalTask);
+      }
       notifyListeners();
+
+      // 2. Queue for Remote Sync
+      await _storage.enqueueSyncAction('CREATE', 'task', finalTask.toMap());
+      SyncService.instance.syncNow();
+      
       return true;
     } catch (e) {
-      _error = 'Failed to create task: ${e.toString()}';
-      _isLoading = false;
+      _error = 'Failed to create task locally: ${e.toString()}';
       notifyListeners();
       return false;
     }
   }
 
   Future<bool> updateTask(Task task) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      await _db.updateTask(task);
+      // 1. Save Locally
+      await _storage.saveTask(task);
 
       _updateTaskInList(_allTasks, task);
       _updateTaskInList(_userTasks, task);
       _updateTaskInList(_assignedTasks, task);
-
-      _isLoading = false;
       notifyListeners();
+
+      // 2. Queue for Remote Sync
+      await _storage.enqueueSyncAction('UPDATE', 'task', task.toMap());
+      SyncService.instance.syncNow();
+
       return true;
     } catch (e) {
       _error = 'Failed to update task: ${e.toString()}';
-      _isLoading = false;
       notifyListeners();
       return false;
     }
@@ -140,14 +182,11 @@ class TaskProvider extends ChangeNotifier {
   Future<bool> toggleComplete(String taskId) async {
     try {
       final taskIndex = _userTasks.indexWhere((t) => t.id == taskId);
-      if (taskIndex == -1) {
-        final allIndex = _allTasks.indexWhere((t) => t.id == taskId);
-        if (allIndex == -1) return false;
-      }
-
-      final list = taskIndex != -1 ? _userTasks : _allTasks;
-      final index = taskIndex != -1 ? taskIndex : _allTasks.indexWhere((t) => t.id == taskId);
-      final task = list[index];
+      final listToUse = taskIndex != -1 ? _userTasks : _allTasks;
+      final indexToUse = taskIndex != -1 ? taskIndex : _allTasks.indexWhere((t) => t.id == taskId);
+      
+      if (indexToUse == -1) return false;
+      final task = listToUse[indexToUse];
 
       final newCompleted = !task.isCompleted;
       final updatedTask = task.copyWith(
@@ -156,14 +195,7 @@ class TaskProvider extends ChangeNotifier {
         status: newCompleted ? TaskStatus.completed : TaskStatus.pending,
       );
 
-      await _db.updateTask(updatedTask);
-
-      _updateTaskInList(_allTasks, updatedTask);
-      _updateTaskInList(_userTasks, updatedTask);
-      _updateTaskInList(_assignedTasks, updatedTask);
-
-      notifyListeners();
-      return true;
+      return await updateTask(updatedTask);
     } catch (e) {
       _error = 'Failed to update task';
       notifyListeners();
@@ -179,21 +211,22 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteTask(String taskId) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      await _db.deleteTask(taskId);
+      // 1. Delete Locally
+      await _storage.deleteTask(taskId);
+      
       _allTasks.removeWhere((t) => t.id == taskId);
       _userTasks.removeWhere((t) => t.id == taskId);
       _assignedTasks.removeWhere((t) => t.id == taskId);
-
-      _isLoading = false;
       notifyListeners();
+
+      // 2. Queue for Remote Sync
+      await _storage.enqueueSyncAction('DELETE', 'task', {'id': taskId});
+      SyncService.instance.syncNow();
+
       return true;
     } catch (e) {
       _error = 'Failed to delete task';
-      _isLoading = false;
       notifyListeners();
       return false;
     }
@@ -212,14 +245,7 @@ class TaskProvider extends ChangeNotifier {
         status: approved ? task.status : TaskStatus.inProgress,
       );
 
-      await _db.updateTask(updatedTask);
-
-      _updateTaskInList(_allTasks, updatedTask);
-      _updateTaskInList(_userTasks, updatedTask);
-      _updateTaskInList(_assignedTasks, updatedTask);
-
-      notifyListeners();
-      return true;
+      return await updateTask(updatedTask);
     } catch (e) {
       _error = 'Failed to review task';
       notifyListeners();
@@ -249,7 +275,7 @@ class TaskProvider extends ChangeNotifier {
         final oldTaskIds = _userTasks.map((t) => t.id).toSet();
         
         loadUserTasks(userId).then((_) {
-          if (oldTaskIds.isNotEmpty) { // Only notify if it's not the initial load
+          if (oldTaskIds.isNotEmpty) {
             final newTaskIds = _userTasks.map((t) => t.id).toSet();
             final newlyAdded = newTaskIds.difference(oldTaskIds);
             for (final id in newlyAdded) {
