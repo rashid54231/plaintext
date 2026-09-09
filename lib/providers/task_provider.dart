@@ -257,6 +257,18 @@ class TaskProvider extends ChangeNotifier {
     return _allTasks.where((t) => t.assignedUserIds.contains(studentId)).toList();
   }
 
+  /// Clears in-memory tasks and cancels active realtime listeners upon logout
+  void clear() {
+    _taskSubscription?.cancel();
+    _taskSubscription = null;
+    _allTasks = [];
+    _userTasks = [];
+    _assignedTasks = [];
+    _isLoading = false;
+    _error = null;
+    notifyListeners();
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

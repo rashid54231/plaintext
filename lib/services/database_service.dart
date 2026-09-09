@@ -108,6 +108,21 @@ class DatabaseService {
     }
   }
 
+  Future<void> updateUserPassword(String email, String newPassword) async {
+    try {
+      final response = await _supabase
+          .from('users')
+          .update({'password': newPassword})
+          .eq('email', email.trim().toLowerCase())
+          .select();
+      if (response.isEmpty) {
+        throw Exception('User not found or password update failed.');
+      }
+    } catch (e) {
+      throw Exception('Failed to update password: $e');
+    }
+  }
+
   // ============================================
   // TASK OPERATIONS
   // ============================================

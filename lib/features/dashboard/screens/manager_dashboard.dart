@@ -853,6 +853,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                     ),
                     title: Text('Logout', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500, color: AppColors.error)),
                     onTap: () {
+                      context.read<TaskProvider>().clear();
                       context.read<UserProvider>().logout();
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);

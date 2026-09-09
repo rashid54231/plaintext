@@ -159,3 +159,37 @@ CREATE POLICY "Allow public delete for avatars" ON storage.objects FOR DELETE US
 
 DROP POLICY IF EXISTS "Allow public update for avatars" ON storage.objects;
 CREATE POLICY "Allow public update for avatars" ON storage.objects FOR UPDATE USING (bucket_id = 'avatars');
+
+-- ============================================
+-- 5. Password Resets (8-Digit OTP System)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.password_resets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  otp TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  is_used BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_email_otp 
+  ON public.password_resets(email, otp);
+
+ALTER TABLE public.password_resets ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow anon insert password_resets" ON public.password_resets;
+CREATE POLICY "Allow anon insert password_resets" ON public.password_resets 
+  FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow anon select password_resets" ON public.password_resets;
+CREATE POLICY "Allow anon select password_resets" ON public.password_resets 
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow anon update password_resets" ON public.password_resets;
+CREATE POLICY "Allow anon update password_resets" ON public.password_resets 
+  FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow anon delete password_resets" ON public.password_resets;
+CREATE POLICY "Allow anon delete password_resets" ON public.password_resets 
+  FOR DELETE USING (true);
+

@@ -9,7 +9,6 @@ import '../../../models/task.dart';
 import '../../../models/user.dart';
 import '../../../providers/task_provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/shimmer_loader.dart';
 import '../../tasks/screens/task_detail_screen.dart';
 import '../../auth/screens/login_screen.dart';
@@ -864,6 +863,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     ),
                     title: Text('Logout', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500, color: AppColors.error)),
                     onTap: () {
+                      context.read<TaskProvider>().clear();
                       context.read<UserProvider>().logout();
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);

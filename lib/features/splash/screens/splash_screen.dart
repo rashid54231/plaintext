@@ -55,12 +55,19 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
+    _initAppAndNavigate();
+  }
 
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        _navigateToNext();
-      }
-    });
+  Future<void> _initAppAndNavigate() async {
+    // Run splash display timer and session restoration concurrently
+    final minSplashWait = Future.delayed(const Duration(milliseconds: 2200));
+    final sessionCheck = context.read<UserProvider>().checkSavedSession();
+
+    await Future.wait([minSplashWait, sessionCheck]);
+
+    if (mounted) {
+      _navigateToNext();
+    }
   }
 
   void _navigateToNext() {

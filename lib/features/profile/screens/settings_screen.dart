@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../providers/user_provider.dart';
+import '../../../providers/task_provider.dart';
 import '../../auth/screens/login_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -341,6 +342,7 @@ class SettingsScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
+              context.read<TaskProvider>().clear();
               context.read<UserProvider>().logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),

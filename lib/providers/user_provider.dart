@@ -3,22 +3,76 @@ import 'package:file_picker/file_picker.dart';
 import '../models/user.dart';
 import '../services/database_service.dart';
 import '../services/file_picker_service.dart';
+import '../services/auth_storage_service.dart';
+import '../config/supabase_config.dart';
 
 class UserProvider extends ChangeNotifier {
   final DatabaseService _db = DatabaseService.instance;
+  final AuthStorageService _authStorage = AuthStorageService.instance;
 
   User? _currentUser;
   List<User> _students = [];
   bool _isLoading = false;
+  bool _isAuthChecking = true;
   String? _error;
 
   User? get currentUser => _currentUser;
   List<User> get students => _students;
   bool get isLoading => _isLoading;
+  bool get isAuthChecking => _isAuthChecking;
   String? get error => _error;
   bool get isLoggedIn => _currentUser != null;
   bool get isManager => _currentUser?.isManager ?? false;
   bool get isStudent => _currentUser?.isStudent ?? false;
+
+  /// Restores saved session from local storage on app cold start,
+  /// then validates with server in the background.
+  Future<bool> checkSavedSession() async {
+    _isAuthChecking = true;
+    notifyListeners();
+
+    try {
+      final cachedUser = await _authStorage.getSession();
+      if (cachedUser == null) {
+        _currentUser = null;
+        _isAuthChecking = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Instantly restore cached session for zero-latency UI
+      _currentUser = cachedUser;
+      _isAuthChecking = false;
+      notifyListeners();
+
+      // Asynchronously verify with server to fetch latest changes or handle deletion
+      if (cachedUser.id != null) {
+        _validateServerSession(cachedUser.id!);
+      }
+
+      return true;
+    } catch (e) {
+      _isAuthChecking = false;
+      notifyListeners();
+      return _currentUser != null;
+    }
+  }
+
+  Future<void> _validateServerSession(String userId) async {
+    try {
+      final serverUser = await _db.getUserById(userId);
+      if (serverUser != null) {
+        _currentUser = serverUser;
+        await _authStorage.saveSession(serverUser);
+        notifyListeners();
+      } else {
+        // User was deleted or deactivated on the server
+        await logout();
+      }
+    } catch (e) {
+      // Keep cached session if device is offline
+    }
+  }
 
   Future<bool> login(String email, String password) async {
     _isLoading = true;
@@ -42,6 +96,8 @@ class UserProvider extends ChangeNotifier {
       }
 
       _currentUser = user;
+      await _authStorage.saveSession(user);
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -85,6 +141,16 @@ class UserProvider extends ChangeNotifier {
       );
 
       final id = await _db.insertUserAndGetId(user);
+
+      // Register with Supabase Auth so Supabase can deliver emails
+      try {
+        await SupabaseConfig.client.auth.signUp(
+          email: email.trim().toLowerCase(),
+          password: password,
+        );
+      } catch (e) {
+        debugPrint('Supabase Auth signUp sync notice: $e');
+      }
       
       String? avatarUrl;
       if (avatarFile != null && id != null) {
@@ -98,6 +164,7 @@ class UserProvider extends ChangeNotifier {
       }
 
       _currentUser = user.copyWith(id: id, avatarUrl: avatarUrl);
+      await _authStorage.saveSession(_currentUser!);
 
       _isLoading = false;
       notifyListeners();
@@ -130,6 +197,12 @@ class UserProvider extends ChangeNotifier {
       
       // Remove from students list since they are now a manager
       _students.removeWhere((s) => s.id == student.id);
+
+      // If promoting self, update local session
+      if (_currentUser?.id == student.id) {
+        _currentUser = updatedUser;
+        await _authStorage.saveSession(updatedUser);
+      }
       
       _isLoading = false;
       notifyListeners();
@@ -171,6 +244,7 @@ class UserProvider extends ChangeNotifier {
 
       await _db.updateUser(updatedUser);
       _currentUser = updatedUser;
+      await _authStorage.saveSession(updatedUser);
 
       _isLoading = false;
       notifyListeners();
@@ -198,6 +272,7 @@ class UserProvider extends ChangeNotifier {
       if (avatarUrl != null) {
         await _db.updateUserAvatar(_currentUser!.id!, avatarUrl);
         _currentUser = _currentUser!.copyWith(avatarUrl: avatarUrl);
+        await _authStorage.saveSession(_currentUser!);
         
         _isLoading = false;
         notifyListeners();
@@ -215,10 +290,11 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
     _currentUser = null;
     _students = [];
     _error = null;
+    await _authStorage.clearSession();
     notifyListeners();
   }
 
