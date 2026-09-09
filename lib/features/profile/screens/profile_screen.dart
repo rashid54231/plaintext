@@ -81,15 +81,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>().currentUser;
     final isManager = user?.isManager ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.backgroundDark : AppColors.background;
+    final card = isDark ? AppColors.cardDark : Colors.white;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
 
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: AppColors.primary,
+        title: Text(
+          'Profile',
+          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.heroGradient,
+          ),
+        ),
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(_isEditing ? Icons.close : Icons.edit_rounded),
+            icon: Icon(_isEditing ? Icons.close_rounded : Icons.edit_rounded),
             onPressed: () {
               setState(() {
                 _isEditing = !_isEditing;
@@ -103,17 +118,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Container(
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
+                gradient: AppColors.heroGradient,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 15,
+                    color: AppColors.primary.withValues(alpha: 0.35),
+                    blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
                 ],
@@ -133,47 +148,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: (isManager ? AppColors.primary : AppColors.success).withOpacity(0.1),
+                color: (isManager ? AppColors.primary : AppColors.success).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                isManager ? 'Manager' : 'Student',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isManager ? AppColors.primary : AppColors.success,
+                border: Border.all(
+                  color: (isManager ? AppColors.primary : AppColors.success).withValues(alpha: 0.3),
                 ),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isManager ? Icons.security_rounded : Icons.school_rounded,
+                    size: 14,
+                    color: isManager ? AppColors.primary : AppColors.success,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isManager ? 'Manager' : 'Student',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isManager ? AppColors.primary : AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 32),
-            if (_isEditing) _buildEditForm() else _buildProfileInfo(user),
+            const SizedBox(height: 28),
+            if (_isEditing) _buildEditForm(card) else _buildProfileInfo(user, card, textPrimary, textSecondary),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileInfo(User? user) {
+  Widget _buildProfileInfo(User? user, Color card, Color textPrimary, Color textSecondary) {
     return Column(
       children: [
-        _buildInfoCard(Icons.person_outline, 'Full Name', user?.name ?? ''),
-        _buildInfoCard(Icons.email_outlined, 'Email', user?.email ?? ''),
-        _buildInfoCard(Icons.phone_outlined, 'Phone', user?.phone ?? 'Not set'),
-        _buildInfoCard(Icons.calendar_today, 'Joined', _formatDate(user?.createdAt)),
+        _buildInfoCard(Icons.person_outline, 'Full Name', user?.name ?? '', card, textPrimary, textSecondary),
+        _buildInfoCard(Icons.email_outlined, 'Email', user?.email ?? '', card, textPrimary, textSecondary),
+        _buildInfoCard(Icons.phone_outlined, 'Phone', user?.phone ?? 'Not set', card, textPrimary, textSecondary),
+        _buildInfoCard(Icons.calendar_today_rounded, 'Joined', _formatDate(user?.createdAt), card, textPrimary, textSecondary),
       ],
     );
   }
 
-  Widget _buildInfoCard(IconData icon, String label, String value) {
+  Widget _buildInfoCard(IconData icon, String label, String value, Color card, Color textPrimary, Color textSecondary) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: textSecondary.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -184,12 +214,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.primary, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,15 +228,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   label,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    color: AppColors.textHint,
+                    color: textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   value,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
                   ),
                 ),
               ],
@@ -217,17 +249,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildEditForm() {
+  Widget _buildEditForm(Color card) {
     return Form(
       key: _formKey,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: card,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

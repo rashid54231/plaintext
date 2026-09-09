@@ -336,9 +336,18 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        title: Text(widget.editTask != null ? 'Edit Task' : 'Create Task'),
-        backgroundColor: AppColors.primary,
+        title: Text(
+          widget.editTask != null ? 'Edit Task' : 'Create Task',
+          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.heroGradient,
+          ),
+        ),
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

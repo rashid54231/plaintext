@@ -177,14 +177,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [_priorityColor, _priorityColor.withValues(alpha: 0.75)],
+          colors: [_priorityColor, _priorityColor.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: _priorityColor.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: _priorityColor.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
@@ -194,30 +200,64 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(8)),
-                child: Text(_task.priority.name.toUpperCase(),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.flag_rounded, size: 13, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text(
+                      _task.priority.name.toUpperCase(),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              if (_task.category != null && _task.category!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _task.category!,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
               const Spacer(),
               StatusBadge(
-                text: _task.isCompleted ? 'Completed' : (_task.isOverdue ? 'Overdue' : 'Active'),
-                backgroundColor: Colors.white24,
+                text: _task.isCompleted
+                    ? 'Completed'
+                    : (_task.isOverdue ? 'Overdue' : 'Pending'),
+                backgroundColor: Colors.white.withValues(alpha: 0.25),
                 textColor: Colors.white,
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(_task.title,
-              style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-          if (_task.category != null && _task.category!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-              child: Text(_task.category!,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white)),
+          const SizedBox(height: 18),
+          Text(
+            _task.title,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.4,
             ),
-          ],
+          ),
         ],
       ),
     );

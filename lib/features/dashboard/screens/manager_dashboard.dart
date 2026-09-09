@@ -200,10 +200,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             icon: const Icon(Icons.calendar_month_rounded, size: 18),
             label: Text('Calendar', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryLight.withOpacity(0.2),
+              backgroundColor: AppColors.primaryLight.withValues(alpha: 0.15),
               foregroundColor: AppColors.primary,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
           ),
         ),
@@ -214,10 +215,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             icon: const Icon(Icons.emoji_events_rounded, size: 18),
             label: Text('Leaderboard', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700).withOpacity(0.2),
-              foregroundColor: const Color(0xFFDAA520),
+              backgroundColor: const Color(0xFFFFD700).withValues(alpha: 0.15),
+              foregroundColor: const Color(0xFFD97706),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
           ),
         ),
@@ -227,11 +229,17 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
   Widget _buildWelcomeHeader(User? user) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))],
+        gradient: AppColors.heroGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -239,19 +247,74 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Welcome back,', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: Colors.white.withValues(alpha: 0.8))),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.shield_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Manager',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormatter.formatShort(DateTime.now()),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  user?.name ?? 'Manager',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(user?.name ?? 'Manager', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 4),
-                Text(DateFormatter.formatFull(DateTime.now()),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
+                Text(
+                  'Manage tasks & track student performance',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 30),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+            ),
+            child: const Icon(
+              Icons.admin_panel_settings_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
           ),
         ],
       ),
@@ -272,7 +335,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             Text('Overview', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
             const SizedBox(height: 14),
             Row(children: [
-              Expanded(child: _statCard('Total', '$total', Icons.assignment_rounded, AppColors.primary)),
+              Expanded(child: _statCard('Total Tasks', '$total', Icons.assignment_rounded, AppColors.primary)),
               const SizedBox(width: 12),
               Expanded(child: _statCard('Completed', '$completed', Icons.check_circle_rounded, AppColors.success)),
             ]),
@@ -290,25 +353,63 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
   Widget _statCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
         color: _card,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 8))],
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(
+          color: color.withValues(alpha: _isDark ? 0.25 : 0.15),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(14)),
-            child: Icon(icon, color: color, size: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              Icon(Icons.trending_up_rounded, color: color.withValues(alpha: 0.4), size: 18),
+            ],
           ),
           const SizedBox(height: 14),
-          Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 26, fontWeight: FontWeight.bold, color: _textPrimary)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: _textPrimary,
+              ),
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: _textSecondary)),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _textSecondary,
+            ),
+          ),
         ],
       ),
     );
@@ -355,53 +456,114 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
       future: DatabaseService.instance.getTaskAssignedUsers(task.id!),
       builder: (context, snap) {
         final names = (snap.data ?? []).map((u) => u.name).join(', ');
+        final statusText = task.isCompleted ? 'Completed' : (task.isOverdue ? 'Overdue' : 'Pending');
+
         return GestureDetector(
           onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task))),
           child: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _card,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: task.isOverdue ? AppColors.error.withValues(alpha: 0.3) : Colors.transparent),
+                color: task.isOverdue
+                    ? AppColors.error.withValues(alpha: 0.3)
+                    : (_isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    color: _priorityColor(task.priority).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(_priorityIcon(task.priority), color: _priorityColor(task.priority), size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(task.title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14, color: _textPrimary),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 3),
-                      Text(snap.data == null ? 'Loading...' : (snap.data!.isEmpty ? 'No students' : 'To: $names'),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    StatusBadge(
-                      text: task.isCompleted ? 'Done' : (task.isOverdue ? 'Overdue' : 'Active'),
-                      backgroundColor: (task.isCompleted ? AppColors.success : task.isOverdue ? AppColors.error : AppColors.info).withValues(alpha: 0.1),
-                      textColor: task.isCompleted ? AppColors.success : task.isOverdue ? AppColors.error : AppColors.info,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _priorityColor(task.priority).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        _priorityIcon(task.priority),
+                        color: _priorityColor(task.priority),
+                        size: 22,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(DateFormatter.formatShort(task.dueDate),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 11, color: _textHint)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            task.title,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: _textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            snap.data == null
+                                ? 'Loading students...'
+                                : (snap.data!.isEmpty ? 'No students assigned' : 'To: $names'),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: _textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    StatusBadge.fromStatus(statusText),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined, size: 14, color: task.isOverdue ? AppColors.error : _textHint),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Due ${DateFormatter.formatShort(task.dueDate)}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: task.isOverdue ? AppColors.error : _textHint,
+                      ),
+                    ),
+                    if (task.category != null && task.category!.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          task.category!,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -588,9 +750,13 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
         }
 
         // Status filter
-        if (_filterStatus == 'Pending') tasks = tasks.where((t) => !t.isCompleted && !t.isOverdue).toList();
-        else if (_filterStatus == 'Completed') tasks = tasks.where((t) => t.isCompleted).toList();
-        else if (_filterStatus == 'Overdue') tasks = tasks.where((t) => t.isOverdue).toList();
+        if (_filterStatus == 'Pending') {
+          tasks = tasks.where((t) => !t.isCompleted && !t.isOverdue).toList();
+        } else if (_filterStatus == 'Completed') {
+          tasks = tasks.where((t) => t.isCompleted).toList();
+        } else if (_filterStatus == 'Overdue') {
+          tasks = tasks.where((t) => t.isOverdue).toList();
+        }
 
         return SafeArea(
           child: Column(

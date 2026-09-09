@@ -59,16 +59,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                  child: Text('Calendar',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),
+                  padding: const EdgeInsets.fromLTRB(12, 12, 20, 16),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _card,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _textSecondary.withValues(alpha: 0.15)),
+                          ),
+                          child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: _textPrimary),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Task Calendar',
+                              style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+                          Text('Track deadlines & schedules',
+                              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: _card,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _textSecondary.withValues(alpha: 0.1)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: _isDark ? 0.3 : 0.04),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
                   child: TableCalendar<Task>(
                     firstDay: DateTime.utc(2020, 1, 1),
@@ -78,16 +110,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     eventLoader: (day) => _getEventsForDay(day, tasks),
                     startingDayOfWeek: StartingDayOfWeek.monday,
                     calendarStyle: CalendarStyle(
-                      todayDecoration: BoxDecoration(color: AppColors.primaryLight.withValues(alpha: 0.5), shape: BoxShape.circle),
-                      selectedDecoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      todayDecoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.35),
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: const BoxDecoration(
+                        gradient: AppColors.heroGradient,
+                        shape: BoxShape.circle,
+                      ),
                       markerDecoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
-                      defaultTextStyle: GoogleFonts.plusJakartaSans(color: _textPrimary),
-                      weekendTextStyle: GoogleFonts.plusJakartaSans(color: AppColors.error),
+                      defaultTextStyle: GoogleFonts.plusJakartaSans(color: _textPrimary, fontWeight: FontWeight.w500),
+                      weekendTextStyle: GoogleFonts.plusJakartaSans(color: AppColors.error, fontWeight: FontWeight.w500),
                     ),
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
-                      titleTextStyle: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary),
+                      titleTextStyle: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: _textPrimary),
                       leftChevronIcon: Icon(Icons.chevron_left, color: _textPrimary),
                       rightChevronIcon: Icon(Icons.chevron_right, color: _textPrimary),
                     ),
@@ -101,12 +139,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       _focusedDay = focusedDay;
                     },
                   ),
-                ).animate().fade().slideY(begin: 0.2, end: 0),
+                ).animate().fade().slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text('Tasks on ${DateFormatter.formatShort(_selectedDay ?? _focusedDay)}',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: _textPrimary)),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Tasks on ${DateFormatter.formatShort(_selectedDay ?? _focusedDay)}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: _textPrimary)),
+                      const Spacer(),
+                      Text('${selectedTasks.length} task${selectedTasks.length == 1 ? '' : 's'}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: _textSecondary)),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -115,9 +169,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.event_busy_rounded, size: 48, color: AppColors.textHint.withValues(alpha: 0.5)),
+                              Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.08),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.event_available_rounded, size: 40, color: AppColors.primary.withValues(alpha: 0.7)),
+                              ),
                               const SizedBox(height: 16),
-                              Text('No tasks for this day', style: GoogleFonts.plusJakartaSans(color: _textSecondary)),
+                              Text('No tasks for this day',
+                                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: _textPrimary)),
+                              const SizedBox(height: 4),
+                              Text('Enjoy your free time!',
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary)),
                             ],
                           ).animate().fade(),
                         )
@@ -135,7 +200,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   color: _card,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: task.isOverdue ? AppColors.error.withValues(alpha: 0.3) : Colors.transparent),
+                                    color: task.isOverdue
+                                        ? AppColors.error.withValues(alpha: 0.3)
+                                        : _textSecondary.withValues(alpha: 0.1),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.03),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
                                 ),
                                 child: Row(
                                   children: [
@@ -143,23 +218,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(task.title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14, color: _textPrimary)),
+                                          Text(
+                                            task.title,
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14,
+                                              color: _textPrimary,
+                                              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                            ),
+                                          ),
                                           if (task.description.isNotEmpty) ...[
                                             const SizedBox(height: 4),
-                                            Text(task.description, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                          ]
+                                            Text(
+                                              task.description,
+                                              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: _textSecondary),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),
-                                    StatusBadge(
-                                      text: task.isCompleted ? 'Done' : (task.isOverdue ? 'Overdue' : 'Active'),
-                                      backgroundColor: (task.isCompleted ? AppColors.success : task.isOverdue ? AppColors.error : AppColors.info).withValues(alpha: 0.1),
-                                      textColor: task.isCompleted ? AppColors.success : task.isOverdue ? AppColors.error : AppColors.info,
-                                    ),
+                                    const SizedBox(width: 8),
+                                    StatusBadge.fromStatus(task.status),
                                   ],
                                 ),
                               ),
-                            ).animate().fade().slideX(begin: 0.2, end: 0, delay: Duration(milliseconds: 50 * index));
+                            ).animate().fade().slideX(begin: 0.1, end: 0, delay: Duration(milliseconds: 40 * index));
                           },
                         ),
                 ),

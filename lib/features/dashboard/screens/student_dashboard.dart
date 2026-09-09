@@ -10,6 +10,7 @@ import '../../../models/user.dart';
 import '../../../providers/task_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../shared/widgets/shimmer_loader.dart';
+import '../../../shared/widgets/status_badge.dart';
 import '../../tasks/screens/task_detail_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../profile/screens/settings_screen.dart';
@@ -178,11 +179,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   Widget _buildHeader(User? user, String greeting) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))],
+        gradient: AppColors.heroGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -190,19 +197,84 @@ class _StudentDashboardState extends State<StudentDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$greeting,', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: Colors.white.withValues(alpha: 0.8))),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.school_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Student',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (user?.classCode != null && user!.classCode!.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          user.classCode!,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '$greeting, ${user?.name ?? 'Student'}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.4,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(user?.name ?? 'Student', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-                const SizedBox(height: 8),
-                Text(DateFormatter.formatFull(DateTime.now()),
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white.withValues(alpha: 0.7))),
+                Text(
+                  DateFormatter.formatFull(DateTime.now()),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.school_rounded, color: Colors.white, size: 30),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+            ),
+            child: const Icon(
+              Icons.auto_stories_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
           ),
         ],
       ),
@@ -213,40 +285,101 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Consumer<TaskProvider>(
       builder: (context, tp, _) {
         final rate = tp.completionRate;
+        final pctInt = (rate * 100).toInt();
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Today's Progress", style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: _textPrimary)),
+            Text(
+              "Your Learning Progress",
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: _textPrimary,
+              ),
+            ),
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary.withValues(alpha: 0.15), AppColors.primary.withValues(alpha: 0.02)],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                color: _card,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  width: 1.5,
                 ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
-                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 8))],
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Completion Rate', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
-                      Text('${(rate * 100).toInt()}%',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.rocket_launch_rounded,
+                                color: AppColors.primary, size: 18),
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Completion Rate',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textPrimary,
+                                ),
+                              ),
+                              Text(
+                                '${tp.completedTasks} of ${tp.totalTasks} tasks done',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  color: _textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '$pctInt%',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
                       value: rate,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                       valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      minHeight: 12,
+                      minHeight: 10,
                     ),
                   ),
                 ],
@@ -254,14 +387,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ),
             const SizedBox(height: 14),
             Row(children: [
-              Expanded(child: _statCard('Total', '${tp.totalTasks}', Icons.assignment_rounded, AppColors.primary)),
-              const SizedBox(width: 12),
-              Expanded(child: _statCard('Done', '${tp.completedTasks}', Icons.check_circle_rounded, AppColors.success)),
+              Expanded(child: _statCard('Assigned', '${tp.totalTasks}', Icons.assignment_rounded, AppColors.primary)),
+              const SizedBox(width: 10),
+              Expanded(child: _statCard('Completed', '${tp.completedTasks}', Icons.check_circle_rounded, AppColors.success)),
             ]),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(children: [
               Expanded(child: _statCard('Pending', '${tp.pendingTasks}', Icons.pending_actions_rounded, AppColors.warning)),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(child: _statCard('Overdue', '${tp.overdueTasks}', Icons.warning_rounded, AppColors.error)),
             ]),
           ],
@@ -272,30 +405,62 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   Widget _statCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: _card,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 15, offset: const Offset(0, 8))],
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(
+          color: color.withValues(alpha: _isDark ? 0.25 : 0.15),
+          width: 1.5,
+        ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15), 
-              borderRadius: BorderRadius.circular(14),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: _textPrimary)),
-              Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: _textSecondary)),
-            ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _textPrimary,
+                    ),
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -352,18 +517,31 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildTaskCard(Task task) {
+    final statusText = task.isCompleted ? 'Completed' : (task.isOverdue ? 'Overdue' : 'Pending');
+
     return GestureDetector(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task))),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _card,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: task.isOverdue ? AppColors.error.withValues(alpha: 0.3)
-                : task.isCompleted ? AppColors.success.withValues(alpha: 0.3)
-                : Colors.transparent),
+            color: task.isOverdue
+                ? AppColors.error.withValues(alpha: 0.3)
+                : task.isCompleted
+                    ? AppColors.success.withValues(alpha: 0.3)
+                    : (_isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -371,46 +549,61 @@ class _StudentDashboardState extends State<StudentDashboard> {
               onTap: () async => await context.read<TaskProvider>().toggleComplete(task.id!),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 26, height: 26,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: task.isCompleted ? AppColors.success : Colors.transparent,
-                  border: Border.all(color: task.isCompleted ? AppColors.success : AppColors.border, width: 2),
-                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: task.isCompleted ? AppColors.success : AppColors.border,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(9),
                 ),
-                child: task.isCompleted ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
+                child: task.isCompleted
+                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                    : null,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(task.title,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600,
-                      color: task.isCompleted ? _textHint : _textPrimary)),
-                  const SizedBox(height: 4),
+                  Text(
+                    task.title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                      color: task.isCompleted ? _textHint : _textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 11, color: _textHint),
-                      const SizedBox(width: 4),
-                      Text(DateFormatter.formatDueDate(task.dueDate),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 11,
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 13,
+                        color: task.isOverdue ? AppColors.error : _textHint,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        DateFormatter.formatDueDate(task.dueDate),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
                           color: task.isOverdue ? AppColors.error : _textHint,
-                          fontWeight: task.isOverdue ? FontWeight.w600 : FontWeight.normal)),
+                          fontWeight: task.isOverdue ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: task.isCompleted ? AppColors.success.withValues(alpha: 0.1) : _priorityColor(task.priority).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(task.isCompleted ? 'DONE' : task.priority.name.toUpperCase(),
-                style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.bold, color: task.isCompleted ? AppColors.success : _priorityColor(task.priority))),
-            ),
+            const SizedBox(width: 8),
+            StatusBadge.fromStatus(statusText),
           ],
         ),
       ),

@@ -23,9 +23,18 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppColors.primary,
+        title: Text(
+          'Settings',
+          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.heroGradient,
+          ),
+        ),
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -173,7 +182,7 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   backgroundImage: user.avatarUrl != null
                       ? CachedNetworkImageProvider(user.avatarUrl!)
                       : null,

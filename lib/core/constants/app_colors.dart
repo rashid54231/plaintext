@@ -79,4 +79,28 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static const LinearGradient heroGradient = LinearGradient(
+    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFF9333EA)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient cardGradientLight = LinearGradient(
+    colors: [Color(0xFFFFFFFF), Color(0xFFF8FAFC)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient cardGradientDark = LinearGradient(
+    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 }
