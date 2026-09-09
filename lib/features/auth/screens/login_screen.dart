@@ -98,26 +98,26 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Container(
-          width: 88,
-          height: 88,
+          width: 84,
+          height: 84,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            gradient: AppColors.heroGradient,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-              )
+                color: AppColors.primary.withValues(alpha: 0.4),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
             ],
           ),
           child: const Icon(
-            Icons.fingerprint_rounded,
-            size: 48,
+            Icons.task_alt_rounded,
+            size: 44,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
             colors: [Colors.white, Color(0xFFE2E8F0)],
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
             end: Alignment.bottomCenter,
           ).createShader(bounds),
           child: Text(
-            'Welcome Back',
+            'TaskFlow',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 32,
               fontWeight: FontWeight.w800,
@@ -134,12 +134,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
-          'Sign in to your account',
+          'Sign in to organize your tasks',
           style: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            color: Colors.white.withOpacity(0.8),
+            fontSize: 15,
+            color: Colors.white.withValues(alpha: 0.85),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -149,21 +149,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginCard(bool isDark) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(32),
+      borderRadius: BorderRadius.circular(28),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(32),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.45)
+                : Colors.white.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.15) : Colors.white.withOpacity(0.8), 
-              width: 1.5
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.white.withValues(alpha: 0.9),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
                 blurRadius: 40,
                 offset: const Offset(0, 20),
               ),
@@ -177,12 +181,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Login',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 CustomTextField(
                   controller: _emailController,
                   label: 'Email Address',
@@ -199,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 CustomTextField(
                   controller: _passwordController,
                   label: 'Password',
@@ -223,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -236,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
@@ -244,18 +248,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         color: isDark ? AppColors.primaryLight : AppColors.primary,
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 CustomButton(
                   text: 'Sign In',
                   isLoading: _isLoading,
                   onPressed: _handleLogin,
                   icon: Icons.login_rounded,
-                  height: 56,
+                  height: 54,
                 ),
               ],
             ),
@@ -272,7 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           "Don't have an account? ",
           style: GoogleFonts.plusJakartaSans(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.85),
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),

@@ -197,8 +197,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                     value: isSelected,
                                     onChanged: (v) {
                                       setState(() {
-                                        if (v == true) _selectedStudentIds.add(s.id!);
-                                        else _selectedStudentIds.remove(s.id);
+                                        if (v == true) {
+                                          _selectedStudentIds.add(s.id!);
+                                        } else {
+                                          _selectedStudentIds.remove(s.id);
+                                        }
                                       });
                                       setModal(() {});
                                     },

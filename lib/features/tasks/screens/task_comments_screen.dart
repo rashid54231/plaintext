@@ -106,19 +106,29 @@ class _TaskCommentsScreenState extends State<TaskCommentsScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Comments'),
+            Text(
+              'Comments',
+              style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
             Text(
               widget.taskTitle,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withValues(alpha: 0.85),
                 fontWeight: FontWeight.w400,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
-        backgroundColor: AppColors.primary,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.heroGradient,
+          ),
+        ),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [

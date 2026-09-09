@@ -8,6 +8,7 @@ import '../../../models/user.dart';
 import '../../../providers/task_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../services/database_service.dart';
+import '../../../shared/widgets/status_badge.dart';
 import 'task_detail_screen.dart';
 import 'create_task_screen.dart';
 
@@ -26,16 +27,30 @@ class _TaskListScreenState extends State<TaskListScreen> {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final isManager = userProvider.isManager;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.backgroundDark : AppColors.background;
+    final card = isDark ? AppColors.cardDark : Colors.white;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
 
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('All Tasks'),
-        backgroundColor: AppColors.primary,
+        title: Text(
+          'All Tasks',
+          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.heroGradient,
+          ),
+        ),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
-          _buildFilterBar(),
+          _buildFilterBar(card, textSecondary),
           Expanded(
             child: Consumer<TaskProvider>(
               builder: (context, taskProvider, _) {
@@ -47,13 +62,29 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.task_rounded, size: 64, color: AppColors.textHint),
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.task_alt_rounded, size: 48, color: AppColors.primary),
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'No tasks found',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16,
-                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Try changing the filter or create a new task',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                color: textSecondary,
                               ),
                             ),
                           ],
@@ -64,7 +95,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         itemCount: tasks.length,
                         itemBuilder: (context, index) {
                           final task = tasks[index];
-                          return _buildTaskItem(task);
+                          return _buildTaskItem(task, card, textPrimary, textSecondary);
                         },
                       );
               },
@@ -80,16 +111,19 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 );
               },
               backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
+              child: const Icon(Icons.add_rounded, color: Colors.white),
             )
           : null,
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar(Color cardColor, Color textSecondary) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: cardColor,
+        border: Border(bottom: BorderSide(color: textSecondary.withValues(alpha: 0.1))),
+      ),
       child: Row(
         children: [
           _buildFilterChip('All', 'all'),
@@ -101,7 +135,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           _buildFilterChip('Overdue', 'overdue'),
           const Spacer(),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.sort_rounded, color: AppColors.textSecondary),
+            icon: Icon(Icons.sort_rounded, color: textSecondary),
             onSelected: (value) => setState(() => _sortBy = value),
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'dueDate', child: Text('Sort by Due Date')),
@@ -118,18 +152,19 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final isSelected = _filterStatus == value;
     return GestureDetector(
       onTap: () => setState(() => _filterStatus = value),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.divider,
+          color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.primary,
           ),
         ),
       ),
@@ -166,7 +201,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     return filtered;
   }
 
-  Widget _buildTaskItem(Task task) {
+  Widget _buildTaskItem(Task task, Color card, Color textPrimary, Color textSecondary) {
     return FutureBuilder<List<User>>(
       future: DatabaseService.instance.getTaskAssignedUsers(task.id!),
       builder: (context, snapshot) {
@@ -183,21 +218,21 @@ class _TaskListScreenState extends State<TaskListScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: card,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
               border: Border.all(
                 color: task.isOverdue
-                    ? AppColors.error.withOpacity(0.3)
+                    ? AppColors.error.withValues(alpha: 0.35)
                     : task.isCompleted
-                        ? AppColors.success.withOpacity(0.3)
-                        : Colors.transparent,
+                        ? AppColors.success.withValues(alpha: 0.3)
+                        : textSecondary.withValues(alpha: 0.1),
               ),
             ),
             child: Column(
@@ -208,7 +243,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getPriorityColor(task.priority).withOpacity(0.1),
+                        color: _getPriorityColor(task.priority).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -226,17 +261,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         task.title,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          color: textPrimary,
+                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (task.isCompleted)
-                      const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20)
-                    else if (task.isOverdue)
-                      const Icon(Icons.warning_rounded, color: AppColors.error, size: 20),
+                    const SizedBox(width: 8),
+                    StatusBadge.fromStatus(task.status),
                   ],
                 ),
                 if (task.description.isNotEmpty) ...[
@@ -245,7 +279,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     task.description,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -254,23 +288,27 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.person_outline, size: 14, color: AppColors.textHint),
+                    Icon(Icons.person_outline_rounded, size: 14, color: textSecondary),
                     const SizedBox(width: 4),
-                    Text(
-                      assignedUsers.isEmpty ? 'No students' : 'To: $assignedNames',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                    Expanded(
+                      child: Text(
+                        assignedUsers.isEmpty ? 'No students' : 'To: $assignedNames',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(Icons.calendar_today, size: 14, color: AppColors.textHint),
+                    const SizedBox(width: 8),
+                    Icon(Icons.calendar_today_rounded, size: 14, color: textSecondary),
                     const SizedBox(width: 4),
                     Text(
                       DateFormatter.formatDueDate(task.dueDate),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
-                        color: task.isOverdue ? AppColors.error : AppColors.textSecondary,
+                        color: task.isOverdue ? AppColors.error : textSecondary,
                         fontWeight: task.isOverdue ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),

@@ -106,9 +106,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        title: const Text('Task Detail'),
-        backgroundColor: AppColors.primary,
+        title: Text(
+          'Task Detail',
+          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.heroGradient,
+          ),
+        ),
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           // Comments button
           Stack(

@@ -15,93 +15,84 @@ class AnimatedAuthBackground extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: isDark
-            ? const LinearGradient(
-                colors: [Color(0xFF070B14), Color(0xFF131034)], // Darker rich colors
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF9333EA)], // Rich indigo to purple
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-      ),
+      color: isDark ? const Color(0xFF070B14) : const Color(0xFF0F172A),
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Animated Orb 1
-          Positioned(
-            top: size.height * -0.1,
-            left: size.width * -0.2,
-            child: Container(
-              width: size.width * 0.8,
-              height: size.width * 0.8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: (isDark ? AppColors.secondary : Colors.white).withOpacity(0.2),
-              ),
-            ).animate(
-              onPlay: (controller) => controller.repeat(reverse: true),
-            ).scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.2, 1.2),
-              duration: 8.seconds,
-              curve: Curves.easeInOutSine,
-            ).move(
-              duration: 12.seconds,
-              begin: const Offset(-20, -20),
-              end: const Offset(20, 20),
-              curve: Curves.easeInOutSine,
+          // 1. High-tech 3D TaskFlow productivity background image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/auth_bg.jpg',
+              fit: BoxFit.cover,
             ),
           ),
-          
-          // Animated Orb 2
+
+          // 2. Translucent gradient scrim to ensure high readability for login inputs
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    (isDark ? const Color(0xFF060913) : const Color(0xFF1E1B4B)).withValues(alpha: 0.72),
+                    (isDark ? const Color(0xFF0A0F1E) : const Color(0xFF0F172A)).withValues(alpha: 0.88),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Subtle animated ambient glowing orbs for depth
           Positioned(
-            bottom: size.height * -0.1,
-            right: size.width * -0.3,
+            top: size.height * 0.05,
+            right: -size.width * 0.2,
             child: Container(
-              width: size.width * 0.9,
-              height: size.width * 0.9,
+              width: size.width * 0.7,
+              height: size.width * 0.7,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: (isDark ? AppColors.primary : Colors.white).withOpacity(0.25),
+                color: AppColors.secondary.withValues(alpha: 0.25),
               ),
             ).animate(
               onPlay: (controller) => controller.repeat(reverse: true),
             ).scale(
-              begin: const Offset(1.2, 1.2),
-              end: const Offset(0.8, 0.8),
-              duration: 10.seconds,
-              curve: Curves.easeInOutSine,
-            ).move(
-              duration: 15.seconds,
-              begin: const Offset(30, 30),
-              end: const Offset(-30, -30),
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1.2, 1.2),
+              duration: 8.seconds,
               curve: Curves.easeInOutSine,
             ),
           ),
 
-          // Blur layer over the orbs to create a soft glowing ambient effect
+          Positioned(
+            bottom: size.height * 0.1,
+            left: -size.width * 0.25,
+            child: Container(
+              width: size.width * 0.75,
+              height: size.width * 0.75,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: 0.2),
+              ),
+            ).animate(
+              onPlay: (controller) => controller.repeat(reverse: true),
+            ).scale(
+              begin: const Offset(1.1, 1.1),
+              end: const Offset(0.85, 0.85),
+              duration: 9.seconds,
+              curve: Curves.easeInOutSine,
+            ),
+          ),
+
+          // 4. Subtle ambient blur over orbs to blend with holographic lights
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
               child: const SizedBox(),
             ),
           ),
 
-          // Noise texture (Optional, but adds a very premium feel)
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.03,
-              child: Image.network(
-                'https://www.transparenttextures.com/patterns/stardust.png',
-                repeat: ImageRepeat.repeat,
-              ),
-            ),
-          ),
-
-          // Main Content Layer
+          // 5. Main Content Layer
           SafeArea(
             child: Center(
               child: child,
@@ -112,3 +103,4 @@ class AnimatedAuthBackground extends StatelessWidget {
     );
   }
 }
+
