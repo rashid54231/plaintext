@@ -135,13 +135,26 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Select Students (${_selectedStudentIds.length} selected)',
-                                style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.bold)),
+                            Expanded(
+                              child: Text(
+                                'Select Students (${_selectedStudentIds.length} selected)',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             TextButton(
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   if (_selectedStudentIds.length == _students.length) {
@@ -154,7 +167,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               },
                               child: Text(
                                 _selectedStudentIds.length == _students.length ? 'Deselect All' : 'Select All',
-                                style: GoogleFonts.plusJakartaSans(color: AppColors.primary, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
