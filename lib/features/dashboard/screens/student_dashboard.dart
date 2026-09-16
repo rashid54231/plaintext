@@ -178,105 +178,183 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildHeader(User? user, String greeting) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // User Avatar with circular glow
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF38BDF8), Color(0xFF6366F1)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          padding: const EdgeInsets.all(2.5),
+          child: ClipOval(
+            child: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: user.avatarUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(color: const Color(0xFF1E293B)),
+                    errorWidget: (context, url, error) => _buildHeaderInitial(user),
+                  )
+                : _buildHeaderInitial(user),
+          ),
+        ),
+        const SizedBox(width: 14),
+
+        // User Info (Progress for / Name / Student Dashboard)
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Progress for',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                user?.name ?? 'Alex Johnson',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: _textPrimary,
+                  letterSpacing: -0.3,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Student Dashboard',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Notification Bell with Floating Frosted Pills
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _isDark ? const Color(0xFF1E2638) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.notifications_outlined,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Floating Frosted Glass Notification Pills
+            Consumer<TaskProvider>(
+              builder: (context, tp, _) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                        color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.4)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.school_rounded, size: 14, color: Colors.white),
+                          const Icon(Icons.notifications_active_rounded, size: 11, color: Color(0xFF38BDF8)),
                           const SizedBox(width: 4),
                           Text(
-                            'Student',
+                            '${tp.pendingTasks} new',
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF38BDF8),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    if (user?.classCode != null && user!.classCode!.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          user.classCode!,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD97706).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.4)),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, size: 11, color: Color(0xFFFBBF24)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${tp.overdueTasks} alert',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFFBBF24),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '$greeting, ${user?.name ?? 'Student'}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  DateFormatter.formatFull(DateTime.now()),
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.85),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderInitial(User? user) {
+    return Container(
+      color: const Color(0xFF1E293B),
+      child: Center(
+        child: Text(
+          user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'A',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
-            ),
-            child: const Icon(
-              Icons.auto_stories_rounded,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -284,108 +362,173 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget _buildProgressSection() {
     return Consumer<TaskProvider>(
       builder: (context, tp, _) {
-        final rate = tp.completionRate;
-        final pctInt = (rate * 100).toInt();
+        final total = tp.totalTasks;
+        final completed = tp.completedTasks;
+        final overdue = tp.overdueTasks;
+        
+        final focusRate = total > 0 ? ((total - overdue) / total).clamp(0.0, 1.0) : 1.0;
+        final goalRate = total > 0 ? (completed / total).clamp(0.0, 1.0) : 0.0;
+        final taskRate = tp.completionRate.clamp(0.0, 1.0);
+
+        final focusPct = (focusRate * 100).toInt();
+        final goalPct = (goalRate * 100).toInt();
+        final taskPct = (taskRate * 100).toInt();
+
+        final todayCompleted = tp.todayTasks.isNotEmpty
+            ? tp.todayTasks.where((t) => t.isCompleted).length
+            : completed;
+        final todayTotal = tp.todayTasks.isNotEmpty ? tp.todayTasks.length : total;
+        final streakDays = _calculateStreak(tp.userTasks);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Your Learning Progress",
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: _textPrimary,
-              ),
-            ),
-            const SizedBox(height: 14),
+            // Main Productivity Overview Card with 3 Circular Rings (Slide 1)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: _card,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.2),
+                  color: AppColors.primary.withValues(alpha: _isDark ? 0.25 : 0.12),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.05),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.rocket_launch_rounded,
-                                color: AppColors.primary, size: 18),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Completion Rate',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: _textPrimary,
-                                ),
-                              ),
-                              Text(
-                                '${tp.completedTasks} of ${tp.totalTasks} tasks done',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  color: _textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          '$pctInt%',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.primary,
-                          ),
+                      Text(
+                        'Productivity Overview',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
                         ),
                       ),
+                      Icon(Icons.chevron_right_rounded, color: _textSecondary, size: 20),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: rate,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      minHeight: 10,
-                    ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildCircularRing('$focusPct%', 'Focus', focusRate, const Color(0xFF38BDF8)),
+                      _buildCircularRing('$goalPct%', 'Goal', goalRate, const Color(0xFF818CF8)),
+                      _buildCircularRing('$taskPct%', 'Tasks', taskRate, const Color(0xFF06B6D4)),
+                    ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 14),
+
+            // Two Split Metric Cards: Today's Tasks & Streak (Slide 1)
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _card,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: _isDark ? 0.2 : 0.1)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Today's Tasks",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _textSecondary,
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 16, color: _textSecondary),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$todayCompleted/$todayTotal',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: _textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _card,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: _isDark ? 0.3 : 0.2)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Streak',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _textSecondary,
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 16, color: _textSecondary),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('🔥', style: TextStyle(fontSize: 18)),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$streakDays days',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: _textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Quick Status Stat Grid
             Row(children: [
               Expanded(child: _statCard('Assigned', '${tp.totalTasks}', Icons.assignment_rounded, AppColors.primary)),
               const SizedBox(width: 10),
@@ -400,6 +543,75 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ],
         );
       },
+    );
+  }
+
+  int _calculateStreak(List<Task> tasks) {
+    final completedDates = tasks
+        .where((t) => t.isCompleted && t.completedDate != null)
+        .map((t) => DateTime(t.completedDate!.year, t.completedDate!.month, t.completedDate!.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    if (completedDates.isEmpty) return 0;
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (!completedDates.contains(today) && !completedDates.contains(yesterday)) {
+      return 0;
+    }
+
+    int streak = 0;
+    DateTime currentCheck = completedDates.contains(today) ? today : yesterday;
+
+    while (completedDates.contains(currentCheck)) {
+      streak++;
+      currentCheck = currentCheck.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  Widget _buildCircularRing(String value, String label, double progress, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: 66,
+              height: 66,
+              child: CircularProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                strokeWidth: 6,
+                backgroundColor: color.withValues(alpha: 0.15),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                strokeCap: StrokeCap.round,
+              ),
+            ),
+            Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: _textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: _textSecondary,
+          ),
+        ),
+      ],
     );
   }
 

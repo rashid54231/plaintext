@@ -144,16 +144,39 @@ class DatabaseService {
     }
   }
 
+  Future<Map<String, List<String>>> _getBulkTaskAssignments(List<String> taskIds) async {
+    if (taskIds.isEmpty) return {};
+    try {
+      final response = await _supabase
+          .from('task_assignments')
+          .select('task_id, user_id')
+          .inFilter('task_id', taskIds);
+      final map = <String, List<String>>{};
+      for (final a in response as List) {
+        final tid = a['task_id'] as String;
+        final uid = a['user_id'] as String;
+        map.putIfAbsent(tid, () => []).add(uid);
+      }
+      return map;
+    } catch (e) {
+      return {};
+    }
+  }
+
   Future<List<Task>> getAllTasks() async {
     try {
       final response = await _supabase
           .from('tasks')
           .select()
           .order('due_date', ascending: true);
+      final rawList = response as List;
+      final taskIds = rawList.map((m) => m['id'] as String).toList();
+      final assignmentsMap = await _getBulkTaskAssignments(taskIds);
+
       final tasks = <Task>[];
-      for (final map in response as List) {
+      for (final map in rawList) {
         final task = Task.fromMap(map);
-        final assignedIds = await getTaskAssignedUserIds(task.id!);
+        final assignedIds = assignmentsMap[task.id] ?? [];
         tasks.add(task.copyWith(assignedUserIds: assignedIds));
       }
       return tasks;
@@ -164,17 +187,19 @@ class DatabaseService {
 
   Future<List<Task>> searchTasks(String query, {String? role, String? userId}) async {
     try {
-      var q = _supabase
+      final response = await _supabase
           .from('tasks')
           .select()
-          .ilike('title', '%$query%');
+          .ilike('title', '%$query%')
+          .order('due_date', ascending: true);
+      final rawList = response as List;
+      final taskIds = rawList.map((m) => m['id'] as String).toList();
+      final assignmentsMap = await _getBulkTaskAssignments(taskIds);
 
-      final response = await q.order('due_date', ascending: true);
       final tasks = <Task>[];
-      for (final map in response as List) {
+      for (final map in rawList) {
         final task = Task.fromMap(map);
-        final assignedIds = await getTaskAssignedUserIds(task.id!);
-        // For student role, filter only their tasks
+        final assignedIds = assignmentsMap[task.id] ?? [];
         if (role == 'student' && userId != null) {
           if (!assignedIds.contains(userId)) continue;
         }
@@ -195,15 +220,20 @@ class DatabaseService {
       final taskIds =
           (assignments as List).map((a) => a['task_id'] as String).toList();
       if (taskIds.isEmpty) return [];
+
       final response = await _supabase
           .from('tasks')
           .select()
           .inFilter('id', taskIds)
           .order('due_date', ascending: true);
+
+      final rawList = response as List;
+      final assignmentsMap = await _getBulkTaskAssignments(taskIds);
+
       final tasks = <Task>[];
-      for (final map in response as List) {
+      for (final map in rawList) {
         final task = Task.fromMap(map);
-        final assignedIds = await getTaskAssignedUserIds(task.id!);
+        final assignedIds = assignmentsMap[task.id] ?? [];
         tasks.add(task.copyWith(assignedUserIds: assignedIds));
       }
       return tasks;
@@ -219,10 +249,14 @@ class DatabaseService {
           .select()
           .eq('assigned_by_user_id', userId)
           .order('due_date', ascending: true);
+      final rawList = response as List;
+      final taskIds = rawList.map((m) => m['id'] as String).toList();
+      final assignmentsMap = await _getBulkTaskAssignments(taskIds);
+
       final tasks = <Task>[];
-      for (final map in response as List) {
+      for (final map in rawList) {
         final task = Task.fromMap(map);
-        final assignedIds = await getTaskAssignedUserIds(task.id!);
+        final assignedIds = assignmentsMap[task.id] ?? [];
         tasks.add(task.copyWith(assignedUserIds: assignedIds));
       }
       return tasks;
@@ -385,12 +419,11 @@ class DatabaseService {
     try {
       final userIds = await getTaskAssignedUserIds(taskId);
       if (userIds.isEmpty) return [];
-      final users = <User>[];
-      for (final userId in userIds) {
-        final user = await getUserById(userId);
-        if (user != null) users.add(user);
-      }
-      return users;
+      final response = await _supabase
+          .from('users')
+          .select()
+          .inFilter('id', userIds);
+      return (response as List).map((m) => User.fromMap(m)).toList();
     } catch (e) {
       return [];
     }

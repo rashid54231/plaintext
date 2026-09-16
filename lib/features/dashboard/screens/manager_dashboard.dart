@@ -178,7 +178,13 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildWelcomeHeader(user),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              _buildAssignedTasksSection(),
+              const SizedBox(height: 20),
+              _buildActivityFeedSection(),
+              const SizedBox(height: 20),
+              _buildProjectStatusSection(),
+              const SizedBox(height: 20),
               _buildActionButtons(context),
               const SizedBox(height: 24),
               _buildStatsGrid(),
@@ -186,6 +192,372 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
               _buildRecentTasks(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeHeader(User? user) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              user?.classCode?.isNotEmpty == true ? user!.classCode! : 'Project Workspace',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: _textPrimary,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Manager: ${user?.name ?? 'Admin'}',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: _textSecondary,
+              ),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _isDark ? const Color(0xFF1E2638) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(Icons.settings_outlined, color: _textSecondary, size: 22),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAssignedTasksSection() {
+    return Consumer2<TaskProvider, UserProvider>(
+      builder: (context, tp, up, _) {
+        final tasks = tp.allTasks.take(3).toList();
+        if (tasks.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Assigned Tasks',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                ),
+                Text(
+                  '${tp.allTasks.length} Total',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...tasks.map((task) {
+              final student = up.students.firstWhere(
+                (s) => task.assignedUserIds.contains(s.id),
+                orElse: () => User(id: '', name: 'Student', email: '', password: '', role: Role.student),
+              );
+              final pColor = _getPriorityColor(task.priority);
+              final pName = task.priority == Priority.high
+                  ? 'High'
+                  : (task.priority == Priority.medium ? 'Med' : 'Low');
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
+                  ),
+                  child: _assignedTaskCard(task.title, student.name, pName, pColor),
+                ),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _assignedTaskCard(String title, String assignee, String priority, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: color.withValues(alpha: 0.2),
+            child: Text(
+              assignee.isNotEmpty ? assignee[0].toUpperCase() : '?',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: color,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  assignee,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: _textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              priority,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityFeedSection() {
+    return Consumer2<TaskProvider, UserProvider>(
+      builder: (context, tp, up, _) {
+        final recentTasks = tp.allTasks.take(2).toList();
+        final pendingCount = tp.pendingTasks;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Activity Feed',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: _textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (recentTasks.isEmpty)
+                Text(
+                  'No recent activity',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: _textSecondary),
+                )
+              else
+                ...recentTasks.map((t) {
+                  final student = up.students.firstWhere(
+                    (s) => t.assignedUserIds.contains(s.id),
+                    orElse: () => User(id: '', name: 'Team', email: '', password: '', role: Role.student),
+                  );
+                  final action = t.isCompleted ? 'completed ${t.title}' : 'working on ${t.title}';
+                  final icon = t.isCompleted ? Icons.check_circle_rounded : Icons.edit_note_rounded;
+                  final color = t.isCompleted ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _feedItem(student.name, action, icon, color),
+                  );
+                }),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.notifications_active_outlined, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$pendingCount active tasks',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _feedItem(String name, String action, IconData icon, Color color) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 14,
+          backgroundColor: color.withValues(alpha: 0.15),
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : '?',
+            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: RichText(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$name ',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: _textPrimary),
+                ),
+                TextSpan(
+                  text: action,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: _textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProjectStatusSection() {
+    return Consumer<TaskProvider>(
+      builder: (context, tp, _) {
+        final highCount = tp.allTasks.where((t) => t.priority == Priority.high).length;
+        final medCount = tp.allTasks.where((t) => t.priority == Priority.medium).length;
+        final lowCount = tp.allTasks.where((t) => t.priority == Priority.low).length;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Project Status',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _statusFilterPill('High ($highCount)', const Color(0xFFEF4444)),
+                const SizedBox(width: 8),
+                _statusFilterPill('Med ($medCount)', const Color(0xFFF59E0B)),
+                const SizedBox(width: 8),
+                _statusFilterPill('Low ($lowCount)', const Color(0xFF06B6D4)),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Color _getPriorityColor(Priority p) {
+    switch (p) {
+      case Priority.high:
+        return AppColors.highPriority;
+      case Priority.medium:
+        return AppColors.mediumPriority;
+      case Priority.low:
+        return AppColors.lowPriority;
+    }
+  }
+
+  Widget _statusFilterPill(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: color,
         ),
       ),
     );
@@ -224,100 +596,6 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildWelcomeHeader(User? user) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.shield_rounded, size: 14, color: Colors.white),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Manager',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      DateFormatter.formatShort(DateTime.now()),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  user?.name ?? 'Manager',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Manage tasks & track student performance',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.85),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
-            ),
-            child: const Icon(
-              Icons.admin_panel_settings_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

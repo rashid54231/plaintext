@@ -6,12 +6,12 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../models/task.dart';
 import '../../../models/user.dart';
+import '../../../models/comment.dart';
 import '../../../providers/task_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../services/database_service.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/status_badge.dart';
 import 'create_task_screen.dart';
 import 'task_comments_screen.dart';
 
@@ -106,23 +106,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        title: Text(
-          'Task Detail',
-          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.heroGradient,
-          ),
-        ),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           // Comments button
           Stack(
             children: [
               IconButton(
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
+                icon: Icon(Icons.chat_bubble_outline_rounded, color: textPrimary),
                 onPressed: () async {
                   await Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => TaskCommentsScreen(
@@ -143,7 +138,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
           if (isManager) ...[
             IconButton(
-              icon: const Icon(Icons.edit_rounded),
+              icon: Icon(Icons.edit_rounded, color: textPrimary),
               onPressed: () async {
                 await Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => CreateTaskScreen(editTask: _task)));
@@ -151,17 +146,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 if (updated != null && mounted) setState(() => _task = updated);
               },
             ),
-            IconButton(icon: const Icon(Icons.delete_rounded), onPressed: _handleDelete),
+            IconButton(icon: Icon(Icons.delete_rounded, color: textPrimary), onPressed: _handleDelete),
           ],
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
+            _buildHeader(textPrimary, textSecondary),
+            const SizedBox(height: 18),
+            _buildStatusTracker(card, textPrimary, textSecondary),
+            const SizedBox(height: 16),
             _buildInfoSection(card, textPrimary, textHint),
             const SizedBox(height: 16),
             _buildDescriptionSection(card, textPrimary, textSecondary),
@@ -169,6 +166,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             _buildDatesSection(card, textHint),
             const SizedBox(height: 16),
             _buildSubmissionSection(isManager, card, textPrimary, textHint),
+            const SizedBox(height: 16),
+            _buildCommentsPreviewSection(card, textPrimary, textSecondary),
             if (_task.reviewComment != null && _task.reviewComment!.isNotEmpty) ...[
               const SizedBox(height: 16),
               _buildReviewSection(card, textPrimary, textSecondary),
@@ -183,91 +182,54 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_priorityColor, _priorityColor.withValues(alpha: 0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  // Slide 2: Minimal Elegant Header with Title & Task ID
+  Widget _buildHeader(Color textPrimary, Color textSecondary) {
+    final taskCode = _task.id != null && _task.id!.length >= 4
+        ? _task.id!.substring(0, 4).toUpperCase()
+        : '104';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _task.title.isNotEmpty ? _task.title : 'Design Marketing Campaign',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: textPrimary,
+            letterSpacing: -0.3,
+          ),
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _priorityColor.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.flag_rounded, size: 13, color: Colors.white),
-                    const SizedBox(width: 4),
-                    Text(
-                      _task.priority.name.toUpperCase(),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Text(
+              'ID: TF-$taskCode',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textSecondary,
               ),
-              if (_task.category != null && _task.category!.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    _task.category!,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              StatusBadge(
-                text: _task.isCompleted
-                    ? 'Completed'
-                    : (_task.isOverdue ? 'Overdue' : 'Pending'),
-                backgroundColor: Colors.white.withValues(alpha: 0.25),
-                textColor: Colors.white,
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            _task.title,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.4,
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _priorityColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                _task.priority.name.toUpperCase(),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: _priorityColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -398,6 +360,157 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
+  Widget _buildStatusTracker(Color card, Color textPrimary, Color textSecondary) {
+    int currentStep = 0;
+    if (_task.isCompleted) {
+      currentStep = 3;
+    } else if ((_task.reviewComment != null && _task.reviewComment!.isNotEmpty) || _uploadedFiles.isNotEmpty) {
+      currentStep = 2;
+    } else if (_task.status == TaskStatus.inProgress) {
+      currentStep = 1;
+    } else {
+      currentStep = 0;
+    }
+
+    final steps = ['Backlog', 'In Progress', 'Review', 'Completed'];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.alt_route_rounded, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Real-Time Status Tracker',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (_task.isCompleted ? AppColors.success : AppColors.primary).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  steps[currentStep],
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _task.isCompleted ? AppColors.success : AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: List.generate(steps.length * 2 - 1, (index) {
+              if (index.isOdd) {
+                final lineIndex = index ~/ 2;
+                final isPassed = lineIndex < currentStep;
+                return Expanded(
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: isPassed ? AppColors.primary : AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              } else {
+                final stepIndex = index ~/ 2;
+                final isCompletedStep = stepIndex < currentStep;
+                final isCurrent = stepIndex == currentStep;
+
+                Color nodeColor = AppColors.border;
+                if (isCompletedStep) {
+                  nodeColor = AppColors.success;
+                } else if (isCurrent) {
+                  nodeColor = AppColors.primary;
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: isCompletedStep || isCurrent ? nodeColor : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isCompletedStep || isCurrent ? nodeColor : AppColors.border,
+                          width: 2,
+                        ),
+                        boxShadow: isCurrent
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: isCompletedStep
+                            ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                            : Text(
+                                '${stepIndex + 1}',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: isCurrent ? Colors.white : AppColors.textHint,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      steps[stepIndex],
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                        color: isCurrent ? textPrimary : textSecondary,
+                      ),
+                    ),
+                  ],
+                );
+              }
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubmissionSection(bool isManager, Color card, Color textPrimary, Color textHint) {
     return Container(
       width: double.infinity,
@@ -408,9 +521,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.attach_file_rounded, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('Submissions', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.attach_file_rounded, color: AppColors.secondary, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text('Attachments & Files', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: textPrimary)),
               const Spacer(),
               if (_uploadedFiles.isNotEmpty)
                 Container(
@@ -424,13 +544,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           if (_isLoadingFiles)
             const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2))
           else if (_uploadedFiles.isEmpty)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 24),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(12),
@@ -438,58 +558,183 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
               child: Column(
                 children: [
-                  Icon(Icons.cloud_upload_outlined, size: 36, color: textHint),
+                  Icon(Icons.cloud_upload_outlined, size: 34, color: textHint),
                   const SizedBox(height: 8),
-                  Text('No files submitted yet', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: textHint)),
+                  Text('No files attached yet', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: textHint)),
                 ],
               ),
             )
           else
             ...List.generate(_uploadedFiles.length, (i) {
               final url = _uploadedFiles[i];
-              final isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-                  .any((ext) => url.toLowerCase().contains(ext));
+              final lowerUrl = url.toLowerCase();
               final fileName = url.split('/').last.split('?').first;
+              
+              String fileType = 'FILE';
+              Color badgeColor = AppColors.info;
+              IconData fileIcon = Icons.insert_drive_file_rounded;
+
+              if (lowerUrl.contains('.pdf')) {
+                fileType = 'PDF';
+                badgeColor = const Color(0xFFEF4444);
+                fileIcon = Icons.picture_as_pdf_rounded;
+              } else if (lowerUrl.contains('.zip') || lowerUrl.contains('.rar') || lowerUrl.contains('.tar')) {
+                fileType = 'ZIP';
+                badgeColor = const Color(0xFFF59E0B);
+                fileIcon = Icons.folder_zip_rounded;
+              } else if (lowerUrl.contains('.doc') || lowerUrl.contains('.docx') || lowerUrl.contains('.txt')) {
+                fileType = 'DOC';
+                badgeColor = const Color(0xFF3B82F6);
+                fileIcon = Icons.article_rounded;
+              } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].any((e) => lowerUrl.contains(e))) {
+                fileType = 'IMG';
+                badgeColor = const Color(0xFF10B981);
+                fileIcon = Icons.image_rounded;
+              }
+
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.03)
+                      : AppColors.background,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 44, height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isImage
-                            ? AppColors.success.withValues(alpha: 0.1)
-                            : AppColors.info.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        color: badgeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        isImage ? Icons.image_rounded : Icons.insert_drive_file_rounded,
-                        color: isImage ? AppColors.success : AppColors.info,
-                        size: 22,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(fileIcon, color: badgeColor, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            fileType,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: badgeColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName,
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimary),
+                        fileName.length > 26 ? '${fileName.substring(0, 26)}...' : fileName,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.download_rounded, color: AppColors.primary, size: 22),
+                      icon: const Icon(Icons.arrow_downward_rounded, color: AppColors.primary, size: 20),
                       onPressed: () => _downloadFile(url),
+                      tooltip: 'Download File',
                     ),
                   ],
                 ),
               );
             }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentsPreviewSection(Color card, Color textPrimary, Color textSecondary) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.forum_rounded, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text('Discussion Thread', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: textPrimary)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => TaskCommentsScreen(taskId: _task.id!, taskTitle: _task.title),
+                  ));
+                  _loadCommentCount();
+                },
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15, color: AppColors.primary),
+                label: Text('Open Chat', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FutureBuilder<List<TaskComment>>(
+            future: DatabaseService.instance.getComments(_task.id!),
+            builder: (context, snapshot) {
+              final comments = snapshot.data ?? [];
+              if (comments.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text('No comments yet. Tap Open Chat to start the discussion.',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textHint)),
+                );
+              }
+              final recent = comments.take(2).toList();
+              return Column(
+                children: recent.map((c) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.03)
+                          : AppColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                          child: Text(
+                            c.userName.isNotEmpty ? c.userName[0].toUpperCase() : '?',
+                            style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(c.userName, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: textPrimary)),
+                              const SizedBox(height: 2),
+                              Text(c.message, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: textSecondary)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ],
       ),
     );

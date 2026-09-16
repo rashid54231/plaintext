@@ -91,20 +91,6 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     if (picked != null) setState(() => _dueDate = picked);
   }
 
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _dueTime,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AppColors.primary, onPrimary: Colors.white),
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) setState(() => _dueTime = picked);
-  }
 
   void _showStudentPicker() {
     showModalBottomSheet(
@@ -335,68 +321,88 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.backgroundDark : AppColors.background;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        title: Text(
-          widget.editTask != null ? 'Edit Task' : 'Create Task',
-          style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.heroGradient,
+        title: Text(
+          widget.editTask != null ? 'Edit Task' : 'New Task',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: textPrimary,
           ),
         ),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title Field
               CustomTextField(
                 controller: _titleCtrl,
-                label: 'Task Title *',
-                hint: 'Enter a clear task title',
+                label: 'Title',
+                hint: 'Develop UX Prototypes',
                 prefixIcon: Icons.title_rounded,
                 validator: (v) => v == null || v.trim().isEmpty ? 'Title is required' : null,
               ),
               const SizedBox(height: 16),
+
+              // Description Field
               CustomTextField(
                 controller: _descCtrl,
                 label: 'Description',
-                hint: 'Describe what needs to be done...',
+                hint: 'Define user flows for onboarding and your rounds and the assets.',
                 prefixIcon: Icons.description_outlined,
-                maxLines: 4,
+                maxLines: 3,
               ),
               const SizedBox(height: 16),
+
+              // Due Date Field (Slide 2)
+              _buildDueDateField(isDark),
+              const SizedBox(height: 16),
+
+              // Priority Selector (Slide 2: High, Medium, Low pills)
+              _buildPrioritySelector(isDark),
+              const SizedBox(height: 18),
+
+              // Assignee Selector (Slide 2: Avatars row + Add button)
+              _buildStudentSelector(isDark),
+              const SizedBox(height: 16),
+
+              // Category Field
+              _buildCategoryField(isDark),
+              const SizedBox(height: 16),
+
+              // Optional Max Marks
               CustomTextField(
                 controller: _maxMarksCtrl,
                 label: 'Max Marks',
-                hint: 'Optional: Enter maximum points',
+                hint: 'Optional: e.g. 100',
                 prefixIcon: Icons.star_border_rounded,
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              _buildCategoryField(isDark),
-              const SizedBox(height: 16),
-              _buildStudentSelector(isDark),
-              const SizedBox(height: 16),
-              _buildDateTimeRow(isDark),
-              const SizedBox(height: 16),
-              _buildPrioritySelector(isDark),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
+
+              // Submit Button
               CustomButton(
                 text: widget.editTask != null ? 'Update Task' : 'Assign Task',
                 isLoading: _isLoading,
                 onPressed: _handleSave,
                 icon: widget.editTask != null ? Icons.save_rounded : Icons.send_rounded,
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -409,7 +415,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Category',
-            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
         const SizedBox(height: 8),
         Wrap(
@@ -429,7 +435,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 ),
                 child: Text(cat,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13, fontWeight: FontWeight.w500,
+                    fontSize: 12, fontWeight: FontWeight.w600,
                     color: isSelected ? Colors.white
                         : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
                   ),
@@ -442,182 +448,252 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     );
   }
 
+  // Slide 2: Assignee Selector (Horizontal Avatars row + "+ Add" circular button)
   Widget _buildStudentSelector(bool isDark) {
-    final card = isDark ? AppColors.cardDark : Colors.white;
-    return GestureDetector(
-      onTap: _showStudentPicker,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: card,
-          border: Border.all(
-            color: _selectedStudentIds.isNotEmpty ? AppColors.primary : AppColors.border,
-            width: _selectedStudentIds.isNotEmpty ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(Icons.people_rounded,
-                  color: _selectedStudentIds.isNotEmpty ? AppColors.primary : AppColors.textHint, size: 20),
-                const SizedBox(width: 8),
-                Text('Assign To *',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
-                const Spacer(),
-                if (_selectedStudentIds.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
-                    child: Text('${_selectedStudentIds.length}',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-                  ),
-              ],
+            Text(
+              'Assignee Selector',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textPrimary,
+              ),
             ),
-            if (_selectedStudentIds.isEmpty) ...[
-              const SizedBox(height: 8),
-              Text('Tap to select students',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textHint)),
-            ] else ...[
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8, runSpacing: 8,
-                children: _selectedStudentIds.map((id) {
-                  final s = _students.firstWhere(
-                    (st) => st.id == id,
-                    orElse: () => User(name: 'Unknown', email: '', password: '', role: Role.student),
-                  );
-                  return Chip(
-                    avatar: CircleAvatar(
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                      child: Text(s.name.isNotEmpty ? s.name[0].toUpperCase() : '?',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            if (_selectedStudentIds.isNotEmpty)
+              Text(
+                '${_selectedStudentIds.length} selected',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              // Display students as round avatars
+              ..._students.map((student) {
+                final isSelected = _selectedStudentIds.contains(student.id);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedStudentIds.remove(student.id);
+                      } else {
+                        _selectedStudentIds.add(student.id!);
+                      }
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 14),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : Colors.transparent,
+                              width: 2.5,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                            child: Text(
+                              student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          width: 52,
+                          child: Text(
+                            student.name.split(' ').first,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? AppColors.primary : textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    label: Text(s.name, style: GoogleFonts.plusJakartaSans(fontSize: 12)),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () => setState(() => _selectedStudentIds.remove(id)),
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  );
-                }).toList(),
+                  ),
+                );
+              }),
+
+              // "+ Add" circular button
+              GestureDetector(
+                onTap: _showStudentPicker,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9),
+                        border: Border.all(
+                          color: AppColors.border,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(Icons.add, size: 22, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '+ Add',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildDateTimeRow(bool isDark) {
+  // Slide 2: Due Date Field (clean single box with date and calendar icon)
+  Widget _buildDueDateField(bool isDark) {
     final card = isDark ? AppColors.cardDark : Colors.white;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Due Date & Time',
-          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
+        Text(
+          'Due Date',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+          ),
+        ),
         const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _selectDate,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: card,
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border,
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormatter.formatShort(_dueDate),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary,
+                  ),
+                ),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  color: isDark ? Colors.white.withValues(alpha: 0.6) : AppColors.textHint,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Slide 2: Priority Selector (High, Medium, Low 3 horizontal pills)
+  Widget _buildPrioritySelector(bool isDark) {
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Priority Selector',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+          ),
+        ),
+        const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(
-              flex: 3,
-              child: GestureDetector(
-                onTap: _selectDate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: card,
-                    border: Border.all(color: AppColors.border),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, color: AppColors.primary, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(DateFormatter.formatShort(_dueDate),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 13,
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
-              child: GestureDetector(
-                onTap: _selectTime,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: card,
-                    border: Border.all(color: AppColors.border),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.access_time, color: AppColors.primary, size: 18),
-                      const SizedBox(width: 8),
-                      Text(_dueTime.format(context),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13,
-                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _priorityPill(Priority.high, 'High', const Color(0xFFEF4444), isDark),
+            const SizedBox(width: 10),
+            _priorityPill(Priority.medium, 'Medium', const Color(0xFFF59E0B), isDark),
+            const SizedBox(width: 10),
+            _priorityPill(Priority.low, 'Low', const Color(0xFF10B981), isDark),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildPrioritySelector(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Priority',
-          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
-        const SizedBox(height: 8),
-        Row(
-          children: Priority.values.map((p) {
-            final isSelected = _priority == p;
-            final color = p == Priority.high ? AppColors.highPriority
-                : p == Priority.medium ? AppColors.mediumPriority
-                : AppColors.lowPriority;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _priority = p),
-                child: Container(
-                  margin: EdgeInsets.only(right: p != Priority.high ? 8 : 0),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? color.withValues(alpha: 0.1) : (isDark ? AppColors.cardDark : Colors.white),
-                    border: Border.all(color: isSelected ? color : AppColors.border, width: isSelected ? 2 : 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.flag_rounded, color: isSelected ? color : AppColors.textHint, size: 22),
-                      const SizedBox(height: 4),
-                      Text(p.name[0].toUpperCase() + p.name.substring(1),
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600,
-                          color: isSelected ? color : AppColors.textSecondary)),
-                    ],
-                  ),
-                ),
+  Widget _priorityPill(Priority p, String label, Color color, bool isDark) {
+    final isSelected = _priority == p;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _priority = p),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? color : color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? color : color.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? Colors.white : color,
               ),
-            );
-          }).toList(),
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 }
