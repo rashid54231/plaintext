@@ -202,44 +202,52 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              user?.classCode?.isNotEmpty == true ? user!.classCode! : 'Project Workspace',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: _textPrimary,
-                letterSpacing: -0.5,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user?.classCode?.isNotEmpty == true ? user!.classCode! : 'Project Workspace',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: _textPrimary,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              'Manager: ${user?.name ?? 'Admin'}',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: _textSecondary,
+              const SizedBox(height: 3),
+              Text(
+                'Manager: ${user?.name ?? 'Admin'}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: _textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: _isDark ? const Color(0xFF1E2638) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -249,7 +257,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: Icon(Icons.notifications_outlined, color: _textSecondary, size: 22),
+                    icon: Icon(Icons.notifications_outlined, color: _textSecondary, size: 20),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const NotificationCenterScreen()),
                     ),
@@ -284,25 +292,25 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             ),
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: _isDark ? const Color(0xFF1E2638) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                icon: Icon(Icons.settings_outlined, color: _textSecondary, size: 22),
+                icon: Icon(Icons.settings_outlined, color: _textSecondary, size: 20),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),

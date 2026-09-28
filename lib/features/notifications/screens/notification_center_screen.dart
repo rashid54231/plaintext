@@ -298,13 +298,17 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Notification Center',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: textPrimary,
+            Flexible(
+              child: Text(
+                'Notifications',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (_unreadCount > 0) ...[
