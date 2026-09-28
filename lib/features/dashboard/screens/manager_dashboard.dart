@@ -20,6 +20,7 @@ import '../../profile/screens/settings_screen.dart';
 import 'analytics_screen.dart';
 import 'calendar_screen.dart';
 import 'leaderboard_screen.dart';
+import '../../notifications/screens/notification_center_screen.dart';
 
 class ManagerDashboard extends StatefulWidget {
   const ManagerDashboard({super.key});
@@ -48,9 +49,9 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
   Future<void> _loadData() async {
     final up = context.read<UserProvider>();
+    final taskProvider = context.read<TaskProvider>();
     await up.loadStudents();
     if (up.currentUser != null) {
-      final taskProvider = context.read<TaskProvider>();
       await Future.wait([
         taskProvider.loadAllTasks(),
         taskProvider.loadAssignedTasks(up.currentUser!.id!),
@@ -224,30 +225,90 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: _isDark ? const Color(0xFF1E2638) : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _isDark ? const Color(0xFF1E2638) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            icon: Icon(Icons.settings_outlined, color: _textSecondary, size: 22),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: Icon(Icons.notifications_outlined, color: _textSecondary, size: 22),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const NotificationCenterScreen()),
+                    ),
+                  ),
+                  Consumer<TaskProvider>(
+                    builder: (context, tp, _) {
+                      final count = tp.allTasks.where((t) => t.isOverdue || t.status == TaskStatus.inProgress).length;
+                      if (count == 0) return const SizedBox.shrink();
+                      return Positioned(
+                        top: -5,
+                        right: -5,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '$count',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 9,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _isDark ? const Color(0xFF1E2638) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(Icons.settings_outlined, color: _textSecondary, size: 22),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

@@ -3,6 +3,46 @@ import 'dart:convert';
 enum TaskStatus { pending, inProgress, completed, overdue }
 enum Priority { low, medium, high }
 
+class SubTask {
+  final String id;
+  final String title;
+  final bool isCompleted;
+
+  SubTask({
+    required this.id,
+    required this.title,
+    this.isCompleted = false,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'is_completed': isCompleted,
+    };
+  }
+
+  factory SubTask.fromMap(Map<String, dynamic> map) {
+    return SubTask(
+      id: map['id'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      isCompleted: map['is_completed'] == true || map['is_completed'] == 1,
+    );
+  }
+
+  SubTask copyWith({
+    String? id,
+    String? title,
+    bool? isCompleted,
+  }) {
+    return SubTask(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
+}
+
 class Task {
   final String? id;
   final String title;
@@ -20,6 +60,7 @@ class Task {
   final List<String> assignedUserIds;
   final int? marks;
   final int? maxMarks;
+  final List<SubTask> subtasks;
 
   Task({
     this.id,
@@ -38,6 +79,7 @@ class Task {
     this.assignedUserIds = const [],
     this.marks,
     this.maxMarks,
+    this.subtasks = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -57,6 +99,9 @@ class Task {
       'category': category,
       'marks': marks,
       'max_marks': maxMarks,
+      'subtasks': subtasks.isNotEmpty
+          ? jsonEncode(subtasks.map((s) => s.toMap()).toList())
+          : null,
     };
     if (id != null) map['id'] = id;
     return map;
@@ -84,7 +129,32 @@ class Task {
           : [],
       marks: map['marks'] as int?,
       maxMarks: map['max_marks'] as int?,
+      subtasks: _parseSubtasks(map['subtasks']),
     );
+  }
+
+  static List<SubTask> _parseSubtasks(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((item) {
+        if (item is Map<String, dynamic>) return SubTask.fromMap(item);
+        if (item is Map) return SubTask.fromMap(Map<String, dynamic>.from(item));
+        return SubTask(id: '', title: item.toString());
+      }).toList();
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is List) {
+          return decoded.map((item) {
+            if (item is Map<String, dynamic>) return SubTask.fromMap(item);
+            if (item is Map) return SubTask.fromMap(Map<String, dynamic>.from(item));
+            return SubTask(id: '', title: item.toString());
+          }).toList();
+        }
+      } catch (_) {}
+    }
+    return [];
   }
 
   static List<String> _parseSubmissionPaths(dynamic value) {
@@ -132,6 +202,7 @@ class Task {
     List<String>? assignedUserIds,
     int? marks,
     int? maxMarks,
+    List<SubTask>? subtasks,
   }) {
     return Task(
       id: id ?? this.id,
@@ -150,8 +221,13 @@ class Task {
       assignedUserIds: assignedUserIds ?? this.assignedUserIds,
       marks: marks ?? this.marks,
       maxMarks: maxMarks ?? this.maxMarks,
+      subtasks: subtasks ?? this.subtasks,
     );
   }
+
+  int get completedSubtasksCount => subtasks.where((s) => s.isCompleted).length;
+  double get subtasksProgress =>
+      subtasks.isEmpty ? 0.0 : completedSubtasksCount / subtasks.length;
 
   bool get isDueSoon {
     final now = DateTime.now();

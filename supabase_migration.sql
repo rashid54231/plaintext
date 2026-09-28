@@ -218,4 +218,8 @@ ALTER TABLE task_assignments
   ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS completed_date TIMESTAMPTZ;
 
+-- Add subtasks column to tasks table
+ALTER TABLE tasks 
+  ADD COLUMN IF NOT EXISTS subtasks TEXT;
+
 

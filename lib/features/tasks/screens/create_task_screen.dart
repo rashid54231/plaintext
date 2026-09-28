@@ -26,12 +26,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final _descCtrl = TextEditingController();
   final _categoryCtrl = TextEditingController();
   final _maxMarksCtrl = TextEditingController();
+  final _subtaskCtrl = TextEditingController();
   bool _isLoading = false;
   DateTime _dueDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _dueTime = const TimeOfDay(hour: 23, minute: 59);
   Priority _priority = Priority.medium;
   List<String> _selectedStudentIds = [];
   List<User> _students = [];
+  List<SubTask> _subtasks = [];
 
   static const List<String> _categories = [
     'Homework', 'Project', 'Quiz', 'Assignment',
@@ -52,6 +54,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       _dueTime = TimeOfDay.fromDateTime(t.dueDate);
       _priority = t.priority;
       _selectedStudentIds = List.from(t.assignedUserIds);
+      _subtasks = List.from(t.subtasks);
     }
   }
 
@@ -61,6 +64,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     _descCtrl.dispose();
     _categoryCtrl.dispose();
     _maxMarksCtrl.dispose();
+    _subtaskCtrl.dispose();
     super.dispose();
   }
 
@@ -98,16 +102,30 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        String classFilter = 'All';
+
         return DraggableScrollableSheet(
-          initialChildSize: 0.7,
+          initialChildSize: 0.75,
           minChildSize: 0.5,
-          maxChildSize: 0.9,
+          maxChildSize: 0.95,
           expand: false,
           builder: (context, scrollCtrl) {
             return StatefulBuilder(
               builder: (context, setModal) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 final bg = isDark ? AppColors.surfaceDark : Colors.white;
+
+                final classCodes = _students
+                    .map((s) => s.classCode)
+                    .where((c) => c != null && c.trim().isNotEmpty)
+                    .map((c) => c!.trim())
+                    .toSet()
+                    .toList();
+
+                final displayedStudents = classFilter == 'All'
+                    ? _students
+                    : _students.where((s) => s.classCode?.trim() == classFilter).toList();
+
                 return Container(
                   decoration: BoxDecoration(
                     color: bg,
@@ -162,22 +180,99 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           ],
                         ),
                       ),
-                      const Divider(height: 1),
+                      const SizedBox(height: 8),
+
+                      // Class / Batch Filters
+                      if (classCodes.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                FilterChip(
+                                  label: Text('All (${_students.length})'),
+                                  selected: classFilter == 'All',
+                                  selectedColor: AppColors.primary,
+                                  checkmarkColor: Colors.white,
+                                  labelStyle: TextStyle(color: classFilter == 'All' ? Colors.white : null),
+                                  onSelected: (val) => setModal(() => classFilter = 'All'),
+                                ),
+                                ...classCodes.map((c) {
+                                  final isSelected = classFilter == c;
+                                  final count = _students.where((s) => s.classCode?.trim() == c).length;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 6),
+                                    child: FilterChip(
+                                      label: Text('$c ($count)'),
+                                      selected: isSelected,
+                                      selectedColor: AppColors.primary,
+                                      checkmarkColor: Colors.white,
+                                      labelStyle: TextStyle(color: isSelected ? Colors.white : null),
+                                      onSelected: (val) => setModal(() => classFilter = c),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (classFilter != 'All') ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
+                            child: Row(
+                              children: [
+                                TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                  ),
+                                  icon: const Icon(Icons.group_add_rounded, size: 16, color: AppColors.primary),
+                                  label: Text(
+                                    'Select All in Class "$classFilter"',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    final classStudentIds = _students
+                                        .where((s) => s.classCode?.trim() == classFilter)
+                                        .map((s) => s.id!)
+                                        .toList();
+                                    setState(() {
+                                      for (final id in classStudentIds) {
+                                        if (!_selectedStudentIds.contains(id)) {
+                                          _selectedStudentIds.add(id);
+                                        }
+                                      }
+                                    });
+                                    setModal(() {});
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+
+                      const Divider(height: 12),
                       Expanded(
-                        child: _students.isEmpty
+                        child: displayedStudents.isEmpty
                             ? Center(child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.people_outline, size: 48, color: AppColors.textHint),
                                   const SizedBox(height: 12),
-                                  Text('No students registered yet', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+                                  Text('No students in this class', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                                 ],
                               ))
                             : ListView.builder(
                                 controller: scrollCtrl,
-                                itemCount: _students.length,
+                                itemCount: displayedStudents.length,
                                 itemBuilder: (context, index) {
-                                  final s = _students[index];
+                                  final s = displayedStudents[index];
                                   final isSelected = _selectedStudentIds.contains(s.id);
                                   return CheckboxListTile(
                                     value: isSelected,
@@ -192,7 +287,29 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                       setModal(() {});
                                     },
                                     title: Text(s.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500)),
-                                    subtitle: Text(s.email, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                                    subtitle: Row(
+                                      children: [
+                                        Text(s.email, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary)),
+                                        if (s.classCode != null && s.classCode!.trim().isNotEmpty) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primary.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              s.classCode!,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                     secondary: CircleAvatar(
                                       radius: 20,
                                       backgroundColor: isSelected ? AppColors.primary : AppColors.divider,
@@ -252,6 +369,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         category: _categoryCtrl.text.trim().isNotEmpty ? _categoryCtrl.text.trim() : null,
         maxMarks: int.tryParse(_maxMarksCtrl.text.trim()),
         assignedUserIds: _selectedStudentIds,
+        subtasks: _subtasks,
       );
       final success = await taskProvider.updateTask(updated);
       if (success) {
@@ -286,6 +404,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         category: _categoryCtrl.text.trim().isNotEmpty ? _categoryCtrl.text.trim() : null,
         maxMarks: int.tryParse(_maxMarksCtrl.text.trim()),
         assignedUserIds: _selectedStudentIds,
+        subtasks: _subtasks,
       );
       final success = await taskProvider.createTask(task);
       setState(() => _isLoading = false);
@@ -299,13 +418,15 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
             dueDate: task.dueDate,
           );
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Task assigned to ${_selectedStudentIds.length} student(s)'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
-        Navigator.of(context).pop();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Task assigned to ${_selectedStudentIds.length} student(s)'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ));
+          Navigator.of(context).pop();
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(taskProvider.error ?? 'Failed to assign task'),
@@ -393,6 +514,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 prefixIcon: Icons.star_border_rounded,
                 keyboardType: TextInputType.number,
               ),
+              const SizedBox(height: 18),
+
+              // Subtasks & Steps Section
+              _buildSubtasksSection(isDark),
               const SizedBox(height: 28),
 
               // Submit Button
@@ -408,6 +533,146 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildSubtasksSection(bool isDark) {
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final card = isDark ? AppColors.cardDark : Colors.white;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.checklist_rounded, size: 20, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Assignment Checklist / Subtasks (Optional)',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (_subtasks.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${_subtasks.length} steps',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _subtaskCtrl,
+                decoration: InputDecoration(
+                  hintText: 'e.g. Step 1: Read Chapter 3',
+                  prefixIcon: const Icon(Icons.add_task_rounded, size: 18, color: AppColors.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+                onSubmitted: (_) => _addSubtask(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _addSubtask,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+        if (_subtasks.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          ...List.generate(_subtasks.length, (index) {
+            final st = _subtasks[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      st.title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+                    onPressed: () {
+                      setState(() => _subtasks.removeAt(index));
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+
+  void _addSubtask() {
+    final text = _subtaskCtrl.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _subtasks.add(SubTask(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: text,
+      ));
+      _subtaskCtrl.clear();
+    });
   }
 
   Widget _buildCategoryField(bool isDark) {

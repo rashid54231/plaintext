@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../models/task.dart';
@@ -34,6 +37,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   bool _isLoadingAssignments = true;
   TaskAssignment? _myAssignment;
   String _assignmentFilter = 'All';
+  Timer? _countdownTimer;
+  Duration _timeRemaining = Duration.zero;
 
   @override
   void initState() {
@@ -42,6 +47,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _loadFiles();
     _loadCommentCount();
     _loadAssignments();
+    _initCountdown();
+  }
+
+  void _initCountdown() {
+    _updateRemainingTime();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) _updateRemainingTime();
+    });
+  }
+
+  void _updateRemainingTime() {
+    final now = DateTime.now();
+    final diff = _task.dueDate.difference(now);
+    setState(() {
+      _timeRemaining = diff;
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAssignments() async {
@@ -198,12 +225,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(textPrimary, textSecondary),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
+            _buildCountdownTimerSection(card, textPrimary, textSecondary),
+            const SizedBox(height: 16),
             _buildStatusTracker(card, textPrimary, textSecondary),
             const SizedBox(height: 16),
             _buildInfoSection(card, textPrimary, textHint),
             const SizedBox(height: 16),
             _buildDescriptionSection(card, textPrimary, textSecondary),
+            if (_task.subtasks.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _buildSubtasksChecklistSection(card, textPrimary, textSecondary),
+            ],
             const SizedBox(height: 16),
             _buildDatesSection(card, textHint),
             const SizedBox(height: 16),
@@ -555,6 +588,313 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
+  Widget _buildCountdownTimerSection(Color card, Color textPrimary, Color textSecondary) {
+    final isDone = _task.isCompleted || (_myAssignment?.isCompleted ?? false);
+    final isOverdue = _timeRemaining.isNegative && !isDone;
+
+    if (isDone) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Assignment Completed',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.success,
+                    ),
+                  ),
+                  Text(
+                    'Great job! This task has been submitted and completed.',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 11, color: textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final totalSeconds = _timeRemaining.inSeconds.abs();
+    final days = totalSeconds ~/ 86400;
+    final hours = (totalSeconds % 86400) ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    final isUrgent = !isOverdue && days == 0 && hours < 24;
+    final accentColor = isOverdue
+        ? AppColors.error
+        : (isUrgent ? AppColors.warning : AppColors.primary);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accentColor.withValues(alpha: 0.25), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isOverdue ? Icons.warning_amber_rounded : Icons.timer_outlined,
+                  color: accentColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                isOverdue ? 'Deadline Expired / Overdue' : 'Live Deadline Countdown',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: accentColor,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isOverdue ? 'LATE' : (isUrgent ? 'DUE SOON' : 'ACTIVE'),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildCountdownBox('$days', 'DAYS', accentColor, textPrimary),
+              _countdownSeparator(accentColor),
+              _buildCountdownBox(hours.toString().padLeft(2, '0'), 'HOURS', accentColor, textPrimary),
+              _countdownSeparator(accentColor),
+              _buildCountdownBox(minutes.toString().padLeft(2, '0'), 'MINS', accentColor, textPrimary),
+              _countdownSeparator(accentColor),
+              _buildCountdownBox(seconds.toString().padLeft(2, '0'), 'SECS', accentColor, textPrimary),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              'Due: ${DateFormatter.formatDateTime(_task.dueDate)}',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                color: textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCountdownBox(String val, String label, Color accent, Color textPrimary) {
+    return Column(
+      children: [
+        Container(
+          width: 58,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: accent.withValues(alpha: 0.2)),
+          ),
+          child: Center(
+            child: Text(
+              val,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: textPrimary,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: accent,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _countdownSeparator(Color accent) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Text(
+        ':',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 20,
+          fontWeight: FontWeight.w900,
+          color: accent.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubtasksChecklistSection(Color card, Color textPrimary, Color textSecondary) {
+    final subtasks = _task.subtasks;
+    final completedCount = _task.completedSubtasksCount;
+    final totalCount = subtasks.length;
+    final progress = _task.subtasksProgress;
+    final pct = (progress * 100).toInt();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.checklist_rounded, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Subtasks Checklist',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: (progress == 1.0 ? AppColors.success : AppColors.primary).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$completedCount / $totalCount ($pct%)',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: progress == 1.0 ? AppColors.success : AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress == 1.0 ? AppColors.success : AppColors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...subtasks.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final sub = entry.value;
+            return InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () async {
+                final updatedList = List<SubTask>.from(_task.subtasks);
+                updatedList[idx] = sub.copyWith(isCompleted: !sub.isCompleted);
+                final updatedTask = _task.copyWith(subtasks: updatedList);
+                setState(() => _task = updatedTask);
+                await context.read<TaskProvider>().updateTask(updatedTask);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      sub.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                      color: sub.isCompleted ? AppColors.success : AppColors.textHint,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        sub.title,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: sub.isCompleted ? AppColors.textHint : textPrimary,
+                          decoration: sub.isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubmissionSection(bool isManager, Color card, Color textPrimary, Color textHint) {
     return Container(
       width: double.infinity,
@@ -636,55 +976,64 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 fileIcon = Icons.image_rounded;
               }
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withValues(alpha: 0.03)
-                      : AppColors.background,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: badgeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(fileIcon, color: badgeColor, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            fileType,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: badgeColor,
+              return InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => _previewFile(url, fileName),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.03)
+                        : AppColors.background,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: badgeColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(fileIcon, color: badgeColor, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              fileType,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: badgeColor,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        fileName.length > 26 ? '${fileName.substring(0, 26)}...' : fileName,
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          fileName.length > 26 ? '${fileName.substring(0, 26)}...' : fileName,
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_downward_rounded, color: AppColors.primary, size: 20),
-                      onPressed: () => _downloadFile(url),
-                      tooltip: 'Download File',
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.remove_red_eye_outlined, color: AppColors.primary, size: 18),
+                        onPressed: () => _previewFile(url, fileName),
+                        tooltip: 'Preview File',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_downward_rounded, color: AppColors.primary, size: 20),
+                        onPressed: () => _downloadFile(url),
+                        tooltip: 'Download File',
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
@@ -968,6 +1317,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ),
               ),
               IconButton(
+                icon: const Icon(Icons.file_download_outlined, size: 20, color: AppColors.primary),
+                onPressed: _exportGradeReport,
+                tooltip: 'Export Grade Report (CSV)',
+              ),
+              IconButton(
                 icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.primary),
                 onPressed: _loadAssignments,
                 tooltip: 'Refresh Submissions',
@@ -1225,36 +1579,47 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 fileIcon = Icons.image_rounded;
               }
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: fileColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(fileIcon, color: fileColor, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimary,
+              return InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _previewFile(url, fileName),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: fileColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(fileIcon, color: fileColor, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.open_in_new_rounded, size: 16, color: fileColor),
-                      onPressed: () => _downloadFile(url),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      tooltip: 'Open File',
-                    ),
-                  ],
+                      IconButton(
+                        icon: Icon(Icons.remove_red_eye_outlined, size: 16, color: fileColor),
+                        onPressed: () => _previewFile(url, fileName),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Preview File',
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.open_in_new_rounded, size: 16, color: fileColor),
+                        onPressed: () => _downloadFile(url),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Open File',
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
@@ -1536,6 +1901,305 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           );
         },
       ),
+    );
+  }
+
+  void _previewFile(String url, String fileName) {
+    final lowerUrl = url.toLowerCase();
+    final isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].any((e) => lowerUrl.contains(e));
+
+    if (isImage) {
+      showDialog(
+        context: context,
+        builder: (ctx) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        fileName,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.download_rounded, color: Colors.white),
+                      onPressed: () => _downloadFile(url),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    minScale: 0.8,
+                    maxScale: 4.0,
+                    child: CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.contain,
+                      placeholder: (c, u) => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      ),
+                      errorWidget: (c, u, e) => Container(
+                        padding: const EdgeInsets.all(30),
+                        color: Colors.black54,
+                        child: const Column(
+                          children: [
+                            Icon(Icons.broken_image_rounded, color: Colors.white70, size: 48),
+                            SizedBox(height: 8),
+                            Text('Failed to load image', style: TextStyle(color: Colors.white70)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else {
+      // Document Preview Modal Sheet
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final sheetBg = isDark ? AppColors.cardDark : Colors.white;
+          final tPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+          final tSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
+
+          IconData docIcon = Icons.insert_drive_file_rounded;
+          Color docColor = AppColors.info;
+          String typeName = 'Document File';
+
+          if (lowerUrl.contains('.pdf')) {
+            docIcon = Icons.picture_as_pdf_rounded;
+            docColor = const Color(0xFFEF4444);
+            typeName = 'Adobe PDF Document';
+          } else if (lowerUrl.contains('.doc') || lowerUrl.contains('.docx')) {
+            docIcon = Icons.article_rounded;
+            docColor = const Color(0xFF3B82F6);
+            typeName = 'Word Document';
+          } else if (lowerUrl.contains('.zip') || lowerUrl.contains('.rar')) {
+            docIcon = Icons.folder_zip_rounded;
+            docColor = const Color(0xFFF59E0B);
+            typeName = 'Archive File';
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: sheetBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: docColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(docIcon, color: docColor, size: 40),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  fileName,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: tPrimary),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  typeName,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: tSecondary),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        label: const Text('Copy Link'),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: url));
+                          Navigator.of(ctx).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('File link copied to clipboard!')),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.open_in_browser_rounded, size: 18),
+                        label: const Text('Open / View'),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _downloadFile(url);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  void _exportGradeReport() {
+    if (_assignments.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No student assignments available to export.')),
+      );
+      return;
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln('"Student Name","Email","Status","Submitted At","Marks","Max Marks","Feedback"');
+
+    for (final a in _assignments) {
+      final name = (a.userName ?? 'Student').replaceAll('"', '""');
+      final email = (a.userEmail ?? '').replaceAll('"', '""');
+      final status = (a.isCompleted || a.status == 'completed'
+              ? 'Graded'
+              : (a.submittedAt != null || a.status == 'submitted' ? 'Submitted' : 'Pending'))
+          .replaceAll('"', '""');
+      final submitted = (a.submittedAt != null ? DateFormatter.formatDateTime(a.submittedAt!) : 'N/A')
+          .replaceAll('"', '""');
+      final marks = a.marks != null ? '${a.marks}' : 'N/A';
+      final maxMarks = _task.maxMarks != null ? '${_task.maxMarks}' : 'N/A';
+      final feedback = (a.reviewComment ?? '').replaceAll('"', '""');
+
+      buffer.writeln('"$name","$email","$status","$submitted","$marks","$maxMarks","$feedback"');
+    }
+
+    final csvText = buffer.toString();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.table_chart_rounded, color: AppColors.success, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Export Grade Report',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Generated CSV report for ${_assignments.length} student(s):',
+                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textHint),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 140,
+                width: double.maxFinite,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.black26 : AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    csvText,
+                    style: GoogleFonts.firaCode(fontSize: 10, color: isDark ? Colors.white70 : Colors.black87),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.copy_rounded, size: 16),
+              label: const Text('Copy CSV'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: csvText));
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Grade report CSV copied to clipboard! Paste into Excel or Google Sheets.'),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
