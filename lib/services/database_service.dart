@@ -1,6 +1,8 @@
+import 'dart:convert';
 import '../config/supabase_config.dart';
 import '../models/user.dart';
 import '../models/task.dart';
+import '../models/task_assignment.dart';
 import '../models/comment.dart';
 
 class DatabaseService {
@@ -215,10 +217,11 @@ class DatabaseService {
     try {
       final assignments = await _supabase
           .from('task_assignments')
-          .select('task_id')
+          .select()
           .eq('user_id', userId);
+      final rawAssignments = assignments as List;
       final taskIds =
-          (assignments as List).map((a) => a['task_id'] as String).toList();
+          rawAssignments.map((a) => a['task_id'] as String).toList();
       if (taskIds.isEmpty) return [];
 
       final response = await _supabase
@@ -230,11 +233,61 @@ class DatabaseService {
       final rawList = response as List;
       final assignmentsMap = await _getBulkTaskAssignments(taskIds);
 
+      final userAssignmentMap = <String, Map<String, dynamic>>{};
+      for (final a in rawAssignments) {
+        userAssignmentMap[a['task_id'] as String] = a;
+      }
+
       final tasks = <Task>[];
       for (final map in rawList) {
         final task = Task.fromMap(map);
         final assignedIds = assignmentsMap[task.id] ?? [];
-        tasks.add(task.copyWith(assignedUserIds: assignedIds));
+        
+        final personal = userAssignmentMap[task.id];
+        if (personal != null) {
+          final isComp = personal['is_completed'] == true || personal['is_completed'] == 1;
+          final compDate = personal['completed_date'] != null 
+              ? DateTime.tryParse(personal['completed_date'] as String) 
+              : null;
+          
+          List<String> subPaths = [];
+          final rawPaths = personal['submission_paths'] ?? personal['submission_path'];
+          if (rawPaths != null) {
+            if (rawPaths is List) {
+              subPaths = List<String>.from(rawPaths);
+            } else if (rawPaths is String && rawPaths.trim().isNotEmpty) {
+              try {
+                final decoded = jsonDecode(rawPaths);
+                if (decoded is List) {
+                  subPaths = List<String>.from(decoded);
+                } else {
+                  subPaths = [rawPaths];
+                }
+              } catch (_) {
+                subPaths = [rawPaths];
+              }
+            }
+          }
+
+          final marks = personal['marks'] as int?;
+          final reviewComment = personal['review_comment'] as String?;
+          final statusStr = personal['status'] as String?;
+          final personalStatus = statusStr != null 
+              ? TaskStatus.values.firstWhere((e) => e.name == statusStr, orElse: () => task.status)
+              : task.status;
+
+          tasks.add(task.copyWith(
+            assignedUserIds: assignedIds,
+            isCompleted: isComp,
+            completedDate: compDate,
+            submissionPaths: subPaths.isNotEmpty ? subPaths : task.submissionPaths,
+            marks: marks ?? task.marks,
+            reviewComment: reviewComment ?? task.reviewComment,
+            status: isComp ? TaskStatus.completed : personalStatus,
+          ));
+        } else {
+          tasks.add(task.copyWith(assignedUserIds: assignedIds));
+        }
       }
       return tasks;
     } catch (e) {
@@ -301,31 +354,45 @@ class DatabaseService {
     try {
       final assignments = await _supabase
           .from('task_assignments')
-          .select('task_id')
+          .select('task_id, is_completed, status')
           .eq('user_id', userId);
-      final taskIds =
-          (assignments as List).map((a) => a['task_id'] as String).toList();
-      if (taskIds.isEmpty) {
+      final assignmentList = assignments as List;
+      if (assignmentList.isEmpty) {
         return {'total': 0, 'completed': 0, 'pending': 0, 'overdue': 0};
       }
-      final response = await _supabase
+      
+      final taskIds = assignmentList.map((a) => a['task_id'] as String).toList();
+      final tasksResp = await _supabase
           .from('tasks')
-          .select('id, is_completed, due_date')
+          .select('id, due_date')
           .inFilter('id', taskIds);
-      final tasks = response as List;
+      
+      final tasksMap = <String, dynamic>{};
+      for (final t in tasksResp as List) {
+        tasksMap[t['id'] as String] = t;
+      }
+
       final now = DateTime.now();
-      int total = tasks.length;
-      int completed = tasks.where((t) => t['is_completed'] == true).length;
-      int pending = tasks
-          .where((t) =>
-              t['is_completed'] == false &&
-              DateTime.parse(t['due_date']).isAfter(now))
-          .length;
-      int overdue = tasks
-          .where((t) =>
-              t['is_completed'] == false &&
-              DateTime.parse(t['due_date']).isBefore(now))
-          .length;
+      int total = assignmentList.length;
+      int completed = 0;
+      int pending = 0;
+      int overdue = 0;
+
+      for (final a in assignmentList) {
+        final isComp = a['is_completed'] == true || a['is_completed'] == 1;
+        if (isComp) {
+          completed++;
+        } else {
+          final t = tasksMap[a['task_id']];
+          final dueDate = t != null ? DateTime.tryParse(t['due_date'] ?? '') : null;
+          if (dueDate != null && dueDate.isBefore(now)) {
+            overdue++;
+          } else {
+            pending++;
+          }
+        }
+      }
+
       return {
         'total': total,
         'completed': completed,
@@ -339,29 +406,128 @@ class DatabaseService {
 
   Future<int> getTotalMarksByUser(String userId) async {
     try {
-      final assignments = await _supabase
-          .from('task_assignments')
-          .select('task_id')
-          .eq('user_id', userId);
-      final taskIds =
-          (assignments as List).map((a) => a['task_id'] as String).toList();
-      if (taskIds.isEmpty) {
-        return 0;
-      }
       final response = await _supabase
-          .from('tasks')
+          .from('task_assignments')
           .select('marks')
-          .inFilter('id', taskIds);
-      final tasks = response as List;
+          .eq('user_id', userId);
+      final list = response as List;
       int totalMarks = 0;
-      for (var t in tasks) {
-        if (t['marks'] != null) {
-          totalMarks += (t['marks'] as int);
+      for (var item in list) {
+        if (item['marks'] != null) {
+          totalMarks += (item['marks'] as int);
         }
       }
       return totalMarks;
     } catch (e) {
       return 0;
+    }
+  }
+
+  Future<List<TaskAssignment>> getTaskAssignments(String taskId) async {
+    try {
+      final response = await _supabase
+          .from('task_assignments')
+          .select()
+          .eq('task_id', taskId);
+      final rawList = response as List;
+      if (rawList.isEmpty) return [];
+
+      final userIds = rawList.map((m) => m['user_id'] as String).toList();
+      final usersResponse = await _supabase
+          .from('users')
+          .select('id, name, email, avatar_url')
+          .inFilter('id', userIds);
+
+      final usersMap = <String, Map<String, dynamic>>{};
+      for (final u in usersResponse as List) {
+        usersMap[u['id'] as String] = u;
+      }
+
+      return rawList.map((m) {
+        final uid = m['user_id'] as String;
+        final u = usersMap[uid];
+        return TaskAssignment.fromMap(
+          m,
+          userName: u?['name'] as String?,
+          userEmail: u?['email'] as String?,
+          userAvatarUrl: u?['avatar_url'] as String?,
+        );
+      }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<TaskAssignment?> getStudentAssignment(String taskId, String userId) async {
+    try {
+      final response = await _supabase
+          .from('task_assignments')
+          .select()
+          .eq('task_id', taskId)
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (response == null) return null;
+      final user = await getUserById(userId);
+      return TaskAssignment.fromMap(
+        response,
+        userName: user?.name,
+        userEmail: user?.email,
+        userAvatarUrl: user?.avatarUrl,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> submitStudentAssignment({
+    required String taskId,
+    required String userId,
+    required List<String> submissionPaths,
+  }) async {
+    try {
+      final now = DateTime.now().toIso8601String();
+      final payload = {
+        'submission_paths': jsonEncode(submissionPaths),
+        'submitted_at': now,
+        'status': 'submitted',
+        'is_completed': true,
+        'completed_date': now,
+      };
+
+      await _supabase
+          .from('task_assignments')
+          .update(payload)
+          .eq('task_id', taskId)
+          .eq('user_id', userId);
+    } catch (e) {
+      throw Exception('Failed to submit assignment: $e');
+    }
+  }
+
+  Future<void> gradeStudentAssignment({
+    required String taskId,
+    required String userId,
+    required int? marks,
+    required String? reviewComment,
+    required bool approved,
+  }) async {
+    try {
+      final now = DateTime.now().toIso8601String();
+      final payload = {
+        'marks': marks,
+        'review_comment': reviewComment,
+        'reviewed_at': now,
+        'status': approved ? 'completed' : 'rejected',
+        'is_completed': approved,
+      };
+
+      await _supabase
+          .from('task_assignments')
+          .update(payload)
+          .eq('task_id', taskId)
+          .eq('user_id', userId);
+    } catch (e) {
+      throw Exception('Failed to grade assignment: $e');
     }
   }
 

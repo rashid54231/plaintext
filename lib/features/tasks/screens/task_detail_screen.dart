@@ -7,6 +7,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../models/task.dart';
 import '../../../models/user.dart';
 import '../../../models/comment.dart';
+import '../../../models/task_assignment.dart';
 import '../../../providers/task_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../services/database_service.dart';
@@ -29,6 +30,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   bool _isUploading = false;
   bool _isLoadingFiles = true;
   int _commentCount = 0;
+  List<TaskAssignment> _assignments = [];
+  bool _isLoadingAssignments = true;
+  TaskAssignment? _myAssignment;
+  String _assignmentFilter = 'All';
 
   @override
   void initState() {
@@ -36,6 +41,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     _task = widget.task;
     _loadFiles();
     _loadCommentCount();
+    _loadAssignments();
+  }
+
+  Future<void> _loadAssignments() async {
+    final currentUser = context.read<UserProvider>().currentUser;
+    try {
+      final list = await DatabaseService.instance.getTaskAssignments(_task.id!);
+      TaskAssignment? myAssign;
+      if (currentUser != null) {
+        final match = list.where((a) => a.userId == currentUser.id);
+        if (match.isNotEmpty) myAssign = match.first;
+      }
+      if (mounted) {
+        setState(() {
+          _assignments = list;
+          _myAssignment = myAssign;
+          if (myAssign != null && myAssign.submissionPaths.isNotEmpty) {
+            _uploadedFiles = List.from(myAssign.submissionPaths);
+          }
+          _isLoadingAssignments = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingAssignments = false);
+    }
   }
 
   Future<void> _loadFiles() async {
@@ -49,6 +79,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Future<void> _pickAndUploadFile() async {
+    final user = context.read<UserProvider>().currentUser;
+    final taskProvider = context.read<TaskProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
       final result = await FilePickerService.instance.pickFiles(allowMultiple: true);
       if (result == null || result.files.isEmpty) return;
@@ -56,27 +90,35 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       final urls = await FilePickerService.instance.uploadMultipleFiles(
         taskId: _task.id!, files: result.files);
       _uploadedFiles.addAll(urls);
-      final updatedTask = _task.copyWith(submissionPaths: _uploadedFiles);
-      await context.read<TaskProvider>().updateTask(updatedTask);
-      setState(() { _task = updatedTask; _isUploading = false; });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${result.files.length} file(s) uploaded'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
+      
+      if (user != null) {
+        await taskProvider.submitStudentAssignment(
+          taskId: _task.id!,
+          userId: user.id!,
+          submissionPaths: _uploadedFiles,
+        );
+        await _loadAssignments();
+      } else {
+        final updatedTask = _task.copyWith(submissionPaths: _uploadedFiles);
+        await taskProvider.updateTask(updatedTask);
+        if (mounted) setState(() => _task = updatedTask);
       }
+      
+      if (mounted) setState(() => _isUploading = false);
+      messenger.showSnackBar(SnackBar(
+        content: Text('${result.files.length} file(s) uploaded successfully!'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
     } catch (e) {
-      setState(() => _isUploading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Upload failed: $e'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
-      }
+      if (mounted) setState(() => _isUploading = false);
+      messenger.showSnackBar(SnackBar(
+        content: Text('Upload failed: $e'),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
     }
   }
 
@@ -165,16 +207,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             const SizedBox(height: 16),
             _buildDatesSection(card, textHint),
             const SizedBox(height: 16),
-            _buildSubmissionSection(isManager, card, textPrimary, textHint),
+            if (isManager)
+              _buildManagerSubmissionsGrid(card, textPrimary, textSecondary, textHint)
+            else
+              _buildSubmissionSection(isManager, card, textPrimary, textHint),
             const SizedBox(height: 16),
             _buildCommentsPreviewSection(card, textPrimary, textSecondary),
-            if (_task.reviewComment != null && _task.reviewComment!.isNotEmpty) ...[
+            if (!isManager && ((_myAssignment?.reviewComment != null && _myAssignment!.reviewComment!.isNotEmpty) || (_task.reviewComment != null && _task.reviewComment!.isNotEmpty))) ...[
               const SizedBox(height: 16),
               _buildReviewSection(card, textPrimary, textSecondary),
             ],
             const SizedBox(height: 24),
             if (!isManager) _buildStudentActions(),
-            if (isManager) _buildManagerActions(),
             const SizedBox(height: 20),
           ],
         ),
@@ -741,36 +785,69 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Widget _buildReviewSection(Color card, Color textPrimary, Color textSecondary) {
+    final comment = _myAssignment?.reviewComment ?? _task.reviewComment;
+    final marks = _myAssignment?.marks ?? _task.marks;
+    if (comment == null || comment.isEmpty) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(Icons.rate_review_rounded, color: AppColors.info, size: 20),
-            const SizedBox(width: 8),
-            Text('Manager Review', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, color: textPrimary)),
-            const Spacer(),
-            if (_task.marks != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: Text('Grade: ${_task.marks}${_task.maxMarks != null ? ' / ${_task.maxMarks}' : ''}',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success)),
+          Row(
+            children: [
+              const Icon(Icons.rate_review_rounded, color: AppColors.info, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Teacher Feedback',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: textPrimary,
+                ),
               ),
-          ]),
+              const Spacer(),
+              if (marks != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Grade: $marks${_task.maxMarks != null ? ' / ${_task.maxMarks}' : ''}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
-          Text(_task.reviewComment!, style: GoogleFonts.plusJakartaSans(fontSize: 14, color: textSecondary, height: 1.5)),
+          Text(
+            comment,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              color: textSecondary,
+              height: 1.5,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStudentActions() {
+    final isDone = _myAssignment?.isCompleted ?? _task.isCompleted;
+
     return Column(
       children: [
         SizedBox(
@@ -778,11 +855,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           child: OutlinedButton.icon(
             onPressed: _isUploading ? null : _pickAndUploadFile,
             icon: _isUploading
-                ? const SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  )
                 : const Icon(Icons.upload_file_rounded, color: AppColors.primary),
-            label: Text(_isUploading ? 'Uploading...' : 'Upload File / Photo',
-                style: GoogleFonts.plusJakartaSans(color: AppColors.primary, fontWeight: FontWeight.w600)),
+            label: Text(
+              _isUploading ? 'Uploading...' : 'Upload Assignment Files',
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -790,19 +875,24 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ),
           ),
         ),
-        if (!_task.isCompleted) ...[
+        if (!isDone) ...[
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: CustomButton(
-              text: 'Submit & Mark Complete',
+              text: 'Submit Assignment',
               onPressed: () async {
-                final success = await context.read<TaskProvider>().toggleComplete(_task.id!);
+                final user = context.read<UserProvider>().currentUser;
+                if (user == null) return;
+                final success = await context.read<TaskProvider>().submitStudentAssignment(
+                  taskId: _task.id!,
+                  userId: user.id!,
+                  submissionPaths: _uploadedFiles,
+                );
                 if (success && mounted) {
-                  setState(() => _task = _task.copyWith(
-                    isCompleted: true, completedDate: DateTime.now(), status: TaskStatus.completed));
+                  _loadAssignments();
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('Task submitted successfully!'),
+                    content: const Text('Assignment submitted successfully! 🎉'),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -818,99 +908,641 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildManagerActions() {
-    final reviewCtrl = TextEditingController(text: _task.reviewComment ?? '');
-    final marksCtrl = TextEditingController(text: _task.marks?.toString() ?? '');
+  Widget _buildManagerSubmissionsGrid(Color card, Color textPrimary, Color textSecondary, Color textHint) {
+    final totalAssigned = _assignments.length;
+    final submittedCount = _assignments.where((a) => a.isCompleted || a.status == 'submitted').length;
+    final gradedCount = _assignments.where((a) => a.marks != null || a.status == 'completed').length;
+    final pendingCount = _assignments.where((a) => !a.isCompleted && a.status != 'submitted').length;
+
+    List<TaskAssignment> filtered = _assignments;
+    if (_assignmentFilter == 'Submitted') {
+      filtered = _assignments.where((a) => a.isCompleted || a.status == 'submitted').toList();
+    } else if (_assignmentFilter == 'Graded') {
+      filtered = _assignments.where((a) => a.marks != null || a.status == 'completed').toList();
+    } else if (_assignmentFilter == 'Pending') {
+      filtered = _assignments.where((a) => !a.isCompleted && a.status != 'submitted').toList();
+    }
+
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark ? AppColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Review Task', style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600,
-              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimaryDark : AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: reviewCtrl,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Add review comment...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border)),
-              contentPadding: const EdgeInsets.all(12),
-            ),
-          ),
-          if (_task.maxMarks != null) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: marksCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Assign Marks (out of ${_task.maxMarks})',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                prefixIcon: const Icon(Icons.star_rounded, color: AppColors.primary),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
           Row(
             children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.assignment_turned_in_rounded, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: CustomButton(
-                  text: 'Approve',
-                  onPressed: () async {
-                    int? marks = int.tryParse(marksCtrl.text.trim());
-                    await context.read<TaskProvider>().reviewTask(
-                      _task.id!, approved: true, comment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task approved ✅', marks: marks);
-                    if (mounted) {
-                      setState(() => _task = _task.copyWith(reviewComment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task approved ✅', marks: marks));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: const Text('Task approved'),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ));
-                    }
-                  },
-                  backgroundColor: AppColors.success,
-                  icon: Icons.check_circle_outline_rounded,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Student Submissions & Grading',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '$totalAssigned student(s) assigned',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: textHint,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.primary),
+                onPressed: _loadAssignments,
+                tooltip: 'Refresh Submissions',
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Mini statistics badges
+          Row(
+            children: [
+              _buildMiniStatChip('Submitted', '$submittedCount', AppColors.info, Icons.upload_file_rounded),
+              const SizedBox(width: 8),
+              _buildMiniStatChip('Graded', '$gradedCount', AppColors.success, Icons.star_rounded),
+              const SizedBox(width: 8),
+              _buildMiniStatChip('Pending', '$pendingCount', AppColors.warning, Icons.hourglass_top_rounded),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: ['All', 'Submitted', 'Graded', 'Pending'].map((filter) {
+                final isSelected = _assignmentFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(
+                      filter,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? Colors.white : textSecondary,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: AppColors.primary,
+                    checkmarkColor: Colors.white,
+                    backgroundColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : AppColors.background,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    side: BorderSide.none,
+                    onSelected: (val) => setState(() => _assignmentFilter = filter),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          if (_isLoadingAssignments)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+            )
+          else if (filtered.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.inbox_outlined, size: 36, color: textHint),
+                  const SizedBox(height: 8),
+                  Text(
+                    _assignments.isEmpty
+                        ? 'No students assigned yet'
+                        : 'No submissions in "$_assignmentFilter" filter',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, color: textHint),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...filtered.map((assignment) => _buildStudentAssignmentCard(assignment, textPrimary, textSecondary, textHint)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStatChip(String label, String value, Color color, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 5),
+            Text(
+              '$label: ',
+              style: GoogleFonts.plusJakartaSans(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+            ),
+            Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(fontSize: 11, color: color, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStudentAssignmentCard(
+    TaskAssignment a,
+    Color textPrimary,
+    Color textSecondary,
+    Color textHint,
+  ) {
+    final isGraded = a.marks != null;
+    final isSubmitted = a.isCompleted || a.status == 'submitted';
+    final hasFiles = a.submissionPaths.isNotEmpty;
+
+    Color statusColor = AppColors.warning;
+    String statusText = 'Pending';
+    if (isGraded) {
+      statusColor = AppColors.success;
+      statusText = 'Graded (${a.marks}${_task.maxMarks != null ? '/${_task.maxMarks}' : ''})';
+    } else if (isSubmitted) {
+      statusColor = AppColors.info;
+      statusText = 'Submitted';
+    } else if (a.status == 'rejected') {
+      statusColor = AppColors.error;
+      statusText = 'Needs Revision';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white.withValues(alpha: 0.04)
+            : AppColors.background,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isGraded
+              ? AppColors.success.withValues(alpha: 0.3)
+              : (isSubmitted ? AppColors.info.withValues(alpha: 0.3) : AppColors.border),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Student header
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                backgroundImage: (a.userAvatarUrl != null && a.userAvatarUrl!.isNotEmpty)
+                    ? NetworkImage(a.userAvatarUrl!)
+                    : null,
+                child: (a.userAvatarUrl == null || a.userAvatarUrl!.isEmpty)
+                    ? Text(
+                        (a.userName != null && a.userName!.isNotEmpty)
+                            ? a.userName![0].toUpperCase()
+                            : 'S',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: CustomButton(
-                  text: 'Reject',
-                  onPressed: () async {
-                    int? marks = int.tryParse(marksCtrl.text.trim());
-                    await context.read<TaskProvider>().reviewTask(
-                      _task.id!, approved: false, comment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task needs revision ❌', marks: marks);
-                    if (mounted) {
-                      setState(() => _task = _task.copyWith(reviewComment: reviewCtrl.text.isNotEmpty ? reviewCtrl.text : 'Task needs revision ❌', marks: marks));
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: const Text('Task rejected'),
-                        backgroundColor: AppColors.error,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ));
-                    }
-                  },
-                  backgroundColor: AppColors.error,
-                  icon: Icons.cancel_outlined,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      a.userName ?? 'Student',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                    ),
+                    Text(
+                      a.userEmail ?? '',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 11, color: textHint),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  statusText,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
+                  ),
                 ),
               ),
             ],
+          ),
+
+          // Submitted timestamp if available
+          if (a.submittedAt != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.schedule_rounded, size: 13, color: textHint),
+                const SizedBox(width: 4),
+                Text(
+                  'Submitted: ${DateFormatter.formatDateTime(a.submittedAt!)}',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, color: textHint),
+                ),
+              ],
+            ),
+          ],
+
+          // Attached Files
+          if (hasFiles) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Attached Files (${a.submissionPaths.length}):',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            ...a.submissionPaths.map((url) {
+              final lowerUrl = url.toLowerCase();
+              final fileName = url.split('/').last.split('?').first;
+
+              Color fileColor = AppColors.info;
+              IconData fileIcon = Icons.insert_drive_file_rounded;
+              if (lowerUrl.contains('.pdf')) {
+                fileColor = const Color(0xFFEF4444);
+                fileIcon = Icons.picture_as_pdf_rounded;
+              } else if (lowerUrl.contains('.doc') || lowerUrl.contains('.docx')) {
+                fileColor = const Color(0xFF3B82F6);
+                fileIcon = Icons.article_rounded;
+              } else if (['.jpg', '.jpeg', '.png', '.webp'].any((e) => lowerUrl.contains(e))) {
+                fileColor = const Color(0xFF10B981);
+                fileIcon = Icons.image_rounded;
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: fileColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(fileIcon, color: fileColor, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.open_in_new_rounded, size: 16, color: fileColor),
+                      onPressed: () => _downloadFile(url),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      tooltip: 'Open File',
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ] else if (isSubmitted) ...[
+            const SizedBox(height: 8),
+            Text(
+              'No files attached with submission',
+              style: GoogleFonts.plusJakartaSans(fontSize: 11, fontStyle: FontStyle.italic, color: textHint),
+            ),
+          ],
+
+          // Feedback quote if already reviewed
+          if (a.reviewComment != null && a.reviewComment!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.info.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(left: BorderSide(color: AppColors.info, width: 3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Teacher Feedback:',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.info),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    a.reviewComment!,
+                    style: GoogleFonts.plusJakartaSans(fontSize: 12, color: textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+          // Action button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _showGradingDialog(a),
+              icon: Icon(
+                isGraded ? Icons.edit_note_rounded : Icons.rate_review_rounded,
+                size: 16,
+                color: isGraded ? AppColors.success : AppColors.primary,
+              ),
+              label: Text(
+                isGraded ? 'Update Grade & Review' : 'Grade Submission',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isGraded ? AppColors.success : AppColors.primary,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                side: BorderSide(
+                  color: isGraded ? AppColors.success : AppColors.primary,
+                  width: 1.2,
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  void _showGradingDialog(TaskAssignment assignment) {
+    final marksCtrl = TextEditingController(text: assignment.marks?.toString() ?? '');
+    final feedbackCtrl = TextEditingController(text: assignment.reviewComment ?? '');
+    bool isApproved = assignment.status != 'rejected';
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final sheetBg = isDark ? AppColors.cardDark : Colors.white;
+          final tPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+          final tSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: sheetBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                          child: Text(
+                            (assignment.userName != null && assignment.userName!.isNotEmpty)
+                                ? assignment.userName![0].toUpperCase()
+                                : 'S',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                assignment.userName ?? 'Student',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: tPrimary,
+                                ),
+                              ),
+                              Text(
+                                assignment.userEmail ?? '',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  color: tSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 28),
+                    Text(
+                      'Score / Marks',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: tPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: marksCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: _task.maxMarks != null
+                            ? 'Enter marks (out of ${_task.maxMarks})'
+                            : 'Enter marks (e.g. 10)',
+                        prefixIcon: const Icon(Icons.star_rounded, color: AppColors.primary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Review Feedback & Comments',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: tPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: feedbackCtrl,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Add constructive feedback for this student...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Decision',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: tPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Approve & Pass'),
+                          selected: isApproved,
+                          selectedColor: AppColors.success.withValues(alpha: 0.2),
+                          onSelected: (val) => setModalState(() => isApproved = true),
+                        ),
+                        const SizedBox(width: 10),
+                        ChoiceChip(
+                          label: const Text('Needs Revision'),
+                          selected: !isApproved,
+                          selectedColor: AppColors.warning.withValues(alpha: 0.2),
+                          onSelected: (val) => setModalState(() => isApproved = false),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: CustomButton(
+                        text: isSubmitting ? 'Saving...' : 'Save Grade & Feedback',
+                        isLoading: isSubmitting,
+                        onPressed: () {
+                          if (isSubmitting) return;
+                          final parsedMarks = int.tryParse(marksCtrl.text.trim());
+                          if (_task.maxMarks != null &&
+                              parsedMarks != null &&
+                              parsedMarks > _task.maxMarks!) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Marks cannot exceed max marks (${_task.maxMarks})'),
+                              backgroundColor: AppColors.error,
+                            ));
+                            return;
+                          }
+                          setModalState(() => isSubmitting = true);
+                          final taskProvider = context.read<TaskProvider>();
+                          final messenger = ScaffoldMessenger.of(context);
+
+                          final navigator = Navigator.of(ctx);
+                          taskProvider.gradeStudentAssignment(
+                            taskId: _task.id!,
+                            userId: assignment.userId,
+                            marks: parsedMarks,
+                            reviewComment: feedbackCtrl.text.trim().isNotEmpty
+                                ? feedbackCtrl.text.trim()
+                                : (isApproved ? 'Well done!' : 'Needs revision.'),
+                            approved: isApproved,
+                          ).then((success) {
+                            if (mounted) {
+                              setModalState(() => isSubmitting = false);
+                              if (success) {
+                                navigator.pop();
+                                _loadAssignments();
+                                messenger.showSnackBar(SnackBar(
+                                  content: Text('Grade saved for ${assignment.userName ?? 'Student'}!'),
+                                  backgroundColor: AppColors.success,
+                                  behavior: SnackBarBehavior.floating,
+                                ));
+                              }
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _handleDelete() {
+    final taskProvider = context.read<TaskProvider>();
+    final nav = Navigator.of(context);
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -922,8 +1554,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             onPressed: () async {
               Navigator.of(ctx).pop();
               await FilePickerService.instance.deleteTaskFiles(_task.id!);
-              final success = await context.read<TaskProvider>().deleteTask(_task.id!);
-              if (success && mounted) Navigator.of(context).pop();
+              final success = await taskProvider.deleteTask(_task.id!);
+              if (success && mounted) nav.pop();
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),

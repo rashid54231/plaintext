@@ -36,11 +36,19 @@ CREATE TABLE IF NOT EXISTS tasks (
   max_marks INTEGER
 );
 
--- 3. Task Assignments (Many-to-Many)
+-- 3. Task Assignments (Many-to-Many with Individual Student Submissions & Grading)
 CREATE TABLE IF NOT EXISTS task_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'inProgress', 'submitted', 'completed', 'rejected')),
+  submission_paths TEXT,
+  submitted_at TIMESTAMPTZ,
+  marks INTEGER,
+  review_comment TEXT,
+  reviewed_at TIMESTAMPTZ,
+  is_completed BOOLEAN DEFAULT false,
+  completed_date TIMESTAMPTZ,
   assigned_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(task_id, user_id)
 );
@@ -107,6 +115,9 @@ CREATE POLICY "All can read assignments" ON task_assignments FOR SELECT USING (t
 
 DROP POLICY IF EXISTS "All can insert assignments" ON task_assignments;
 CREATE POLICY "All can insert assignments" ON task_assignments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "All can update assignments" ON task_assignments;
+CREATE POLICY "All can update assignments" ON task_assignments FOR UPDATE USING (true);
 
 DROP POLICY IF EXISTS "All can delete assignments" ON task_assignments;
 CREATE POLICY "All can delete assignments" ON task_assignments FOR DELETE USING (true);
@@ -192,4 +203,19 @@ CREATE POLICY "Allow anon update password_resets" ON public.password_resets
 DROP POLICY IF EXISTS "Allow anon delete password_resets" ON public.password_resets;
 CREATE POLICY "Allow anon delete password_resets" ON public.password_resets 
   FOR DELETE USING (true);
+
+-- ============================================
+-- 6. Upgrade Migration for Existing task_assignments
+-- Run this if task_assignments table already exists!
+-- ============================================
+ALTER TABLE task_assignments 
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS submission_paths TEXT,
+  ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS marks INTEGER,
+  ADD COLUMN IF NOT EXISTS review_comment TEXT,
+  ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS completed_date TIMESTAMPTZ;
+
 

@@ -232,6 +232,65 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> submitStudentAssignment({
+    required String taskId,
+    required String userId,
+    required List<String> submissionPaths,
+  }) async {
+    try {
+      await _db.submitStudentAssignment(
+        taskId: taskId,
+        userId: userId,
+        submissionPaths: submissionPaths,
+      );
+
+      // Update local task if in userTasks
+      final taskIndex = _userTasks.indexWhere((t) => t.id == taskId);
+      if (taskIndex != -1) {
+        final current = _userTasks[taskIndex];
+        final updated = current.copyWith(
+          isCompleted: true,
+          completedDate: DateTime.now(),
+          status: TaskStatus.completed,
+          submissionPaths: submissionPaths,
+        );
+        _userTasks[taskIndex] = updated;
+        await _storage.saveTask(updated);
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      _error = 'Failed to submit assignment: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> gradeStudentAssignment({
+    required String taskId,
+    required String userId,
+    required int? marks,
+    required String? reviewComment,
+    required bool approved,
+  }) async {
+    try {
+      await _db.gradeStudentAssignment(
+        taskId: taskId,
+        userId: userId,
+        marks: marks,
+        reviewComment: reviewComment,
+        approved: approved,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to grade student: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> reviewTask(String taskId, {required bool approved, String? comment, int? marks}) async {
     try {
       final taskIndex = _allTasks.indexWhere((t) => t.id == taskId);
