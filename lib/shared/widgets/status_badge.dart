@@ -9,6 +9,7 @@ class StatusBadge extends StatelessWidget {
   final IconData? icon;
   final double fontSize;
   final EdgeInsetsGeometry? padding;
+  final bool showDot;
 
   const StatusBadge({
     super.key,
@@ -16,17 +17,18 @@ class StatusBadge extends StatelessWidget {
     this.backgroundColor,
     this.textColor,
     this.icon,
-    this.fontSize = 12,
+    this.fontSize = 11,
     this.padding,
+    this.showDot = true,
   });
 
   factory StatusBadge.fromStatus(dynamic status) {
-    final statusStr = status is Enum ? status.name : (status?.toString() ?? '');
+    final rawStr = status is Enum ? status.name : (status?.toString() ?? '');
     Color bg;
     Color fg;
     IconData ic;
 
-    switch (statusStr.toLowerCase()) {
+    switch (rawStr.toLowerCase()) {
       case 'completed':
         bg = AppColors.success;
         fg = AppColors.success;
@@ -63,8 +65,12 @@ class StatusBadge extends StatelessWidget {
         ic = Icons.label_outline_rounded;
     }
 
+    final formattedText = rawStr.isNotEmpty 
+        ? '${rawStr[0].toUpperCase()}${rawStr.substring(1)}'
+        : 'Status';
+
     return StatusBadge(
-      text: status,
+      text: formattedText,
       backgroundColor: bg.withValues(alpha: 0.12),
       textColor: fg,
       icon: ic,
@@ -82,16 +88,34 @@ class StatusBadge extends StatelessWidget {
         color: effectiveBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: effectiveTextColor.withValues(alpha: 0.25),
+          color: effectiveTextColor.withValues(alpha: 0.22),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: fontSize + 2, color: effectiveTextColor),
+            Icon(icon, size: fontSize + 3, color: effectiveTextColor),
             const SizedBox(width: 4),
+          ] else if (showDot) ...[
+            Container(
+              width: 5.5,
+              height: 5.5,
+              margin: const EdgeInsets.only(right: 5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: effectiveTextColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: effectiveTextColor.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                    spreadRadius: 0.5,
+                  ),
+                ],
+              ),
+            ),
           ],
           Text(
             text,

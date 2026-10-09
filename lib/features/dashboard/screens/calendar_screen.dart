@@ -62,19 +62,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   padding: const EdgeInsets.fromLTRB(12, 12, 20, 16),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _card,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _textSecondary.withValues(alpha: 0.15)),
+                      if (Navigator.canPop(context)) ...[
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _card,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: _textSecondary.withValues(alpha: 0.15)),
+                            ),
+                            child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: _textPrimary),
                           ),
-                          child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: _textPrimary),
                         ),
-                      ),
-                      const SizedBox(width: 8),
+                        const SizedBox(width: 8),
+                      ] else ...[
+                        const SizedBox(width: 8),
+                      ],
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

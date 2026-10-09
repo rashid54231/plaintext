@@ -119,7 +119,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
             BoxShadow(color: AppColors.primary.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 10)),
             BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5)),
           ],
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
+          border: Border.all(
+            color: _isDark ? Colors.white.withValues(alpha: 0.12) : AppColors.border.withValues(alpha: 0.8),
+            width: 1.2,
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),

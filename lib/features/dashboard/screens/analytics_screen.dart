@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../models/task.dart';
 import '../../../providers/task_provider.dart';
 
@@ -10,40 +11,47 @@ class AnalyticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bg = Color(0xFF0B0E14);
-    const card = Color(0xFF131823);
-    const textPrimary = Colors.white;
-    const textSecondary = Color(0xFF94A3B8);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0B0F19) : AppColors.background;
+    final card = isDark ? const Color(0xFF131B2A) : Colors.white;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.border.withValues(alpha: 0.7);
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: textPrimary),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
         title: Text(
           'Analytics',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            width: 34,
-            height: 34,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.08),
+              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+              border: Border.all(color: borderColor),
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.info_outline_rounded, size: 18, color: Colors.white),
+              icon: Icon(Icons.info_outline_rounded, size: 18, color: textPrimary),
               onPressed: () {},
             ),
           ),
@@ -65,37 +73,28 @@ class AnalyticsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Slide 3: Card 1 - Weekly Task Completion Bar Chart with "All Months >"
-                _buildWeeklyCompletionCard(all, card, textPrimary, textSecondary),
+                _buildWeeklyCompletionCard(all, card, textPrimary, textSecondary, borderColor, isDark),
                 const SizedBox(height: 16),
-
-                // Slide 3: Card 2 - Split Row (Multi-color Donut Chart + Total Productivity Score)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 1,
-                      child: _buildDonutChartCard(all, completed, pending, overdue, card, textPrimary),
+                      child: _buildDonutChartCard(all, completed, pending, overdue, card, borderColor, isDark),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 1,
-                      child: _buildProductivityScoreCard(completed, total, card, textPrimary, textSecondary),
+                      child: _buildProductivityScoreCard(completed, total, card, textPrimary, textSecondary, borderColor, isDark),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-
-                // Slide 3: Card 3 - Overdue Task Tracker Pill Card
-                _buildOverdueTrackerCard(overdue, card, textPrimary),
+                _buildOverdueTrackerCard(overdue, card, textPrimary, borderColor, isDark),
                 const SizedBox(height: 16),
-
-                // Slide 3: Card 4 - Monthly Trend Wave Line Chart
-                _buildMonthlyTrendCard(all, card, textPrimary, textSecondary),
+                _buildMonthlyTrendCard(all, card, textPrimary, textSecondary, borderColor, isDark),
                 const SizedBox(height: 20),
-
-                // Slide 3: Floating Callout Highlight Badges
-                _buildFloatingHighlightCards(completionRate, onTimeRate, card, textPrimary, textSecondary),
+                _buildFloatingHighlightCards(completionRate, onTimeRate, card, textPrimary, textSecondary, borderColor, isDark),
                 const SizedBox(height: 30),
               ],
             ),
@@ -105,21 +104,27 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  // Slide 3: Card 1 - Weekly task completion with real data from Supabase
-  Widget _buildWeeklyCompletionCard(List<Task> all, Color card, Color textPrimary, Color textSecondary) {
+  Widget _buildWeeklyCompletionCard(
+    List<Task> all,
+    Color card,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
+    bool isDark,
+  ) {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final counts = List.filled(7, 0.0);
 
     for (final t in all) {
       if (t.isCompleted && t.completedDate != null) {
-        final weekday = t.completedDate!.weekday; // 1 = Mon, 7 = Sun
+        final weekday = t.completedDate!.weekday;
         if (weekday >= 1 && weekday <= 7) {
           counts[weekday - 1] += 1.0;
         }
       } else {
         final weekday = t.dueDate.weekday;
         if (weekday >= 1 && weekday <= 7) {
-          counts[weekday - 1] += 0.5; // scheduled weight
+          counts[weekday - 1] += 0.5;
         }
       }
     }
@@ -150,9 +155,13 @@ class AnalyticsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -172,17 +181,13 @@ class AnalyticsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(color: borderColor),
                 ),
-                child: Row(
-                  children: [
-                    Text(
-                      'All Months >',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11, color: textSecondary, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                child: Text(
+                  'All Months >',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, color: textSecondary, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -234,7 +239,7 @@ class AnalyticsScreen extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxVal > 10 ? (maxVal / 4).roundToDouble() : 2,
                   getDrawingHorizontalLine: (val) => FlLine(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
                     strokeWidth: 1,
                   ),
                 ),
@@ -248,15 +253,22 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  // Slide 3: Multi-color Donut Chart (Real dynamic category / status distribution)
-  Widget _buildDonutChartCard(List<Task> all, int completed, int pending, int overdue, Color card, Color textPrimary) {
+  Widget _buildDonutChartCard(
+    List<Task> all,
+    int completed,
+    int pending,
+    int overdue,
+    Color card,
+    Color borderColor,
+    bool isDark,
+  ) {
     final highCount = all.where((t) => t.priority == Priority.high).length;
     final inProgressCount = all.where((t) => !t.isCompleted && !t.isOverdue).length;
 
     List<PieChartSectionData> sections;
     if (all.isEmpty) {
       sections = [
-        PieChartSectionData(value: 1, color: Colors.white12, showTitle: false, radius: 24),
+        PieChartSectionData(value: 1, color: isDark ? Colors.white12 : Colors.black12, showTitle: false, radius: 24),
       ];
     } else {
       sections = [
@@ -274,9 +286,13 @@ class AnalyticsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Center(
@@ -295,8 +311,15 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  // Slide 3: Total Productivity Score Card (Dynamic percentage based on real completion)
-  Widget _buildProductivityScoreCard(int completed, int total, Color card, Color textPrimary, Color textSecondary) {
+  Widget _buildProductivityScoreCard(
+    int completed,
+    int total,
+    Color card,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
+    bool isDark,
+  ) {
     final score = total > 0 ? (completed / total).clamp(0.0, 1.0) : 0.0;
     final scorePct = (score * 100).toInt();
 
@@ -306,9 +329,13 @@ class AnalyticsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -355,14 +382,26 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  // Slide 3: Overdue task tracker pill card with real backend count
-  Widget _buildOverdueTrackerCard(int overdue, Color card, Color textPrimary) {
+  Widget _buildOverdueTrackerCard(
+    int overdue,
+    Color card,
+    Color textPrimary,
+    Color borderColor,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -401,8 +440,14 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  // Slide 3: Monthly trend wave chart calculated from real task history
-  Widget _buildMonthlyTrendCard(List<Task> all, Color card, Color textPrimary, Color textSecondary) {
+  Widget _buildMonthlyTrendCard(
+    List<Task> all,
+    Color card,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
+    bool isDark,
+  ) {
     final spots = <FlSpot>[];
     for (int i = 0; i < 7; i++) {
       final monthOffset = DateTime.now().subtract(Duration(days: (6 - i) * 30));
@@ -421,9 +466,13 @@ class AnalyticsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -443,9 +492,9 @@ class AnalyticsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Text(
                   'Months >',
@@ -463,7 +512,9 @@ class AnalyticsScreen extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxY > 10 ? (maxY / 3).roundToDouble() : 2,
-                  getDrawingHorizontalLine: (v) => FlLine(color: Colors.white.withValues(alpha: 0.06)),
+                  getDrawingHorizontalLine: (v) => FlLine(
+                    color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
+                  ),
                 ),
                 titlesData: FlTitlesData(
                   show: true,
@@ -517,28 +568,33 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  // Slide 3: Floating Highlight Cards with real completion rate and on-time rate
   Widget _buildFloatingHighlightCards(
     double completionRate,
     double onTimeRate,
     Color card,
     Color textPrimary,
     Color textSecondary,
+    Color borderColor,
+    bool isDark,
   ) {
     final compPct = (completionRate * 100).toInt();
     final onTimePct = onTimeRate.toInt();
 
     return Row(
       children: [
-        // Completed Rate
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: card,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 16, offset: const Offset(0, 6)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
             child: Row(
@@ -552,7 +608,7 @@ class AnalyticsScreen extends StatelessWidget {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF0F172A),
+                          color: textPrimary,
                         ),
                       ),
                       Text(
@@ -560,7 +616,7 @@ class AnalyticsScreen extends StatelessWidget {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF64748B),
+                          color: textSecondary,
                         ),
                       ),
                     ],
@@ -572,16 +628,19 @@ class AnalyticsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-
-        // On-Time Rate
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: card,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 16, offset: const Offset(0, 6)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
             child: Row(
@@ -604,7 +663,7 @@ class AnalyticsScreen extends StatelessWidget {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF64748B),
+                          color: textSecondary,
                         ),
                       ),
                       Text(
@@ -612,7 +671,7 @@ class AnalyticsScreen extends StatelessWidget {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF0F172A),
+                          color: textPrimary,
                         ),
                       ),
                     ],
