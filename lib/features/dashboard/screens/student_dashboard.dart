@@ -1093,7 +1093,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1158,28 +1158,47 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               const Divider(height: 1),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const SizedBox(height: 14),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
+                runSpacing: 6,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.assignment_ind_rounded, size: 14, color: _textHint),
-                      const SizedBox(width: 6),
-                      Text('Assigned ${DateFormatter.formatShort(task.assignedDate)}',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500, color: _textHint)),
+                      Icon(Icons.assignment_ind_rounded, size: 13, color: _textHint),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Assigned ${DateFormatter.formatShort(task.assignedDate)}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: _textHint,
+                        ),
+                      ),
                     ],
                   ),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(task.isOverdue ? Icons.warning_rounded : Icons.event_rounded, size: 14, color: task.isOverdue ? AppColors.error : _textHint),
-                      const SizedBox(width: 6),
-                      Text('Due ${DateFormatter.formatShort(task.dueDate)}',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12,
-                            color: task.isOverdue ? AppColors.error : _textHint,
-                            fontWeight: task.isOverdue ? FontWeight.bold : FontWeight.w600)),
+                      Icon(
+                        task.isOverdue ? Icons.warning_rounded : Icons.event_rounded,
+                        size: 13,
+                        color: task.isOverdue ? AppColors.error : _textHint,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Due ${DateFormatter.formatShort(task.dueDate)}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11.5,
+                          color: task.isOverdue ? AppColors.error : _textHint,
+                          fontWeight: task.isOverdue ? FontWeight.bold : FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ],
