@@ -117,7 +117,7 @@ class AppColors {
       offset: const Offset(0, 2),
     ),
   ];
-
+//color
   static List<BoxShadow> get softShadowDark => [
     BoxShadow(
       color: Colors.black.withValues(alpha: 0.25),
