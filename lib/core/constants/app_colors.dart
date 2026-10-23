@@ -10,7 +10,7 @@ class AppColors {
   static const Color secondary = Color(0xFF8B5CF6); // Violet 500
   static const Color accent = Color(0xFFF43F5E); // Rose 500
   static const Color tertiary = Color(0xFF14B8A6); // Teal 500
-
+//light
   // Light Theme
   static const Color background = Color(0xFFF8FAFC); // Slate 50
   static const Color surface = Color(0xFFFFFFFF);
