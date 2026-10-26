@@ -61,7 +61,7 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
+//l
   static const LinearGradient successGradient = LinearGradient(
     colors: [Color(0xFF34D399), Color(0xFF059669)],
     begin: Alignment.topLeft,
