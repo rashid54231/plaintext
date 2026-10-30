@@ -169,7 +169,7 @@ class OtpService {
         message: 'OTP verified successfully!',
       );
     }
-
+//supa password
     // 3. Check Supabase password_resets table if available
     if (client != null) {
       try {
