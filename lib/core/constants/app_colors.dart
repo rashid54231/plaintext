@@ -55,7 +55,7 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
+//colo
   static const LinearGradient splashGradient = LinearGradient(
     colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
     begin: Alignment.topLeft,
